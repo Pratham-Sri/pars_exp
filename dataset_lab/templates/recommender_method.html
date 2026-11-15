@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ method.title }} · Music Recommenders{% endblock %}
+{% block content %}
+<section class="rec-head">
+  <a class="crumb" href="{{ url_for('main.experiment', slug='recommender-systems') }}">← RECOMMENDER SYSTEMS</a>
+  <h1>{{ method.title }}</h1>
+  <p>{{ method.detail }}</p>
+</section>
+<nav class="rec-tabs">
+  {% for entry in methods %}<a class="{% if entry.slug == method.slug %}active{% endif %}" href="{{ url_for('main.recommender_method', method=entry.slug, user_id=user_id) }}">{{ entry.title }}</a>{% endfor %}
+  <a href="{{ url_for('main.recommender_library', user_id=user_id) }}">Song library</a><a href="{{ url_for('main.recommender_history', user_id=user_id) }}">History</a>
+</nav>
+
+<form class="rec-controls" method="post">
+  <input type="hidden" name="action" value="recommend">
+  <label>Listener profile<input name="user_id" value="{{ user_id }}" maxlength="48"></label>
+  {% if method.slug in ['content-based','hybrid','item-knn'] %}
+  <label>Seed track<select name="seed_track">{% for track in catalog %}<option value="{{ track.track_id }}" {% if track.track_id == options.seed_track %}selected{% endif %}>{{ track.title }} — {{ track.artist }}</option>{% endfor %}</select></label>
+  {% endif %}
+  {% if method.slug in ['item-neighbor','adjusted-cosine'] %}
+  <label>Track to predict<select name="target_track">{% for track in catalog %}<option value="{{ track.track_id }}" {% if track.track_id == options.target_track %}selected{% endif %}>{{ track.title }} — {{ track.artist }}</option>{% endfor %}</select></label>
+  {% endif %}
+  {% if method.slug == 'item-knn' %}
+  <label>Items<select name="seen_mode"><option value="unseen" {% if options.seen_mode == 'unseen' %}selected{% endif %}>Unseen</option><option value="seen" {% if options.seen_mode == 'seen' %}selected{% endif %}>Seen</option></select></label>
+  <label>Neighbors k<input type="number" name="k" min="1" max="20" value="{{ options.k }}"></label>
+  {% endif %}
+  {% if method.slug in ['cold-start','knowledge-based'] %}
+  <fieldset class="tag-picks"><legend>Preference tags</legend>
+    {% for category, values in tag_groups.items() %}
+    <div class="tag-group"><strong>{{ category }}</strong><div>{% for tag in values[:18] %}<label class="tag-option"><input type="checkbox" name="preferences" value="{{ tag }}" {% if tag in options.preferences %}checked{% endif %}>{{ tag.split('---')[-1] }}</label>{% endfor %}</div></div>
+    {% endfor %}
+  </fieldset>
+  <div class="rec-weights">
+    <label>Genre weight<input type="number" min="0" step="0.1" name="genre_weight" value="{{ options.genre_weight }}"></label>
+    <label>Mood weight<input type="number" min="0" step="0.1" name="mood_weight" value="{{ options.mood_weight }}"></label>
+    <label>Instrument weight<input type="number" min="0" step="0.1" name="instrument_weight" value="{{ options.instrument_weight }}"></label>
+  </div>
+  {% endif %}
+  <button type="submit">Get recommendations</button>
+</form>
+
+{% if analysis['metrics'] or analysis['message'] or analysis['items'] %}
+<section class="rec-output">
+  {% if analysis['metrics'] %}<div class="rec-metrics">{% for metric in analysis['metrics'] %}<span>{{ metric }}</span>{% endfor %}</div>{% endif %}
+  {% if analysis['message'] %}<p class="rec-message">{{ analysis['message'] }}</p>{% endif %}
+  {% if analysis['neighbors'] %}<div class="neighbor-list">Nearest profiles: {% for neighbor in analysis['neighbors'] %}<span>{{ neighbor.user_id }} · {{ '%.3f'|format(neighbor.similarity) }}</span>{% endfor %}</div>{% endif %}
+  {% if analysis['items'] %}<div class="rec-results">
+    {% for track in analysis['items'] %}
+    <article class="result-card"><span class="result-score">{{ '%.2f'|format(track.score) }}{% if method.slug in ['item-neighbor','adjusted-cosine','collaborative','user-neighbor'] %} / 5{% endif %}</span><h3>{{ track.title }}</h3><p>{{ track.artist }}{% if track.album %} · {{ track.album }}{% endif %}</p><small>{{ track.reason }}</small><a class="listen-link" href="{{ url_for('main.recommender_listen', track_id=track.track_id, user_id=user_id) }}" target="_blank" rel="noopener">OPEN / LISTEN ↗</a></article>
+    {% endfor %}
+  </div>{% endif %}
+</section>
+{% endif %}
+
+<section class="catalog-head"><div><h2>Jamendo catalog</h2><p>{{ catalog|length }} tracks shown · rate tracks to build the local interaction matrix</p></div></section>
+<section class="catalog-grid">
+  {% for track in catalog %}
+  <article class="catalog-card">
+    <span class="track-id">{{ track.track_id }}</span>
+    <h3>{{ track.title }}</h3><p>{{ track.artist }}</p>
+    <div class="track-tags">{% for tag in track.tags[:4] %}<span>{{ tag.split('---')[-1] }}</span>{% endfor %}</div>
+    <div class="catalog-actions"><a href="{{ url_for('main.recommender_listen', track_id=track.track_id, user_id=user_id) }}" target="_blank" rel="noopener">OPEN / LISTEN ↗</a></div>
+    <form class="rating-form" method="post">
+      <input type="hidden" name="action" value="rate"><input type="hidden" name="track_id" value="{{ track.track_id }}">
+      <label>Profile<input name="user_id" value="{{ user_id }}" maxlength="48" required></label>
+      <label>Rating<select name="rating"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></label>
+      <button type="submit">Save</button>
+    </form>
+  </article>
+  {% endfor %}
+</section>
+<style>
+.rec-head,.rec-tabs,.rec-controls,.rec-output,.catalog-head,.catalog-grid{max-width:1220px;margin-left:auto;margin-right:auto;padding-left:28px;padding-right:28px}.rec-head{padding-top:28px;padding-bottom:18px}.rec-head h1{margin:12px 0 6px}.rec-head p,.catalog-head p{color:#555;margin:0}.rec-tabs{display:flex;gap:7px;overflow:auto;padding-top:8px;padding-bottom:18px;border-bottom:1px solid #bbb}.rec-tabs a{padding:6px 9px;border:1px solid #999;white-space:nowrap;font-size:11px;text-decoration:none}.rec-tabs a.active{background:#111;color:white!important;border-color:#111}.rec-controls{padding-top:20px;padding-bottom:20px;display:flex;align-items:end;gap:12px;flex-wrap:wrap}.rec-controls label,.rec-weights label{display:grid;gap:5px;font-size:11px;font-weight:700}.rec-controls input:not([type=checkbox]),.rec-controls select,.rating-form input,.rating-form select{font:inherit;padding:8px;border:1px solid #888;background:white;min-width:150px}.rec-controls button,.rating-form button{padding:9px 13px;background:#111;color:white;border:1px solid #111;font:inherit;cursor:pointer}.rec-controls button:hover,.rating-form button:hover{background:white;color:#111}.tag-picks{width:100%;border:1px solid #aaa;padding:12px}.tag-group{margin:6px 0 12px}.tag-group>div{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.tag-option{display:flex!important;align-items:center;gap:4px!important;padding:3px 6px;background:#f2f2f2;font-weight:400!important}.rec-weights{display:flex;gap:10px;flex-wrap:wrap}.rec-output{padding-bottom:24px}.rec-metrics{display:flex;gap:8px;flex-wrap:wrap}.rec-metrics span,.neighbor-list span{padding:5px 8px;border:1px solid #aaa;font-size:11px}.rec-message{padding:12px;background:#f3f3f3;border-left:3px solid #111;margin-top:12px}.neighbor-list{margin-top:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}.rec-results{margin-top:14px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.result-card,.catalog-card{border:1px solid #bbb;padding:13px;min-width:0}.result-score{float:right;font-weight:700;font-size:12px}.result-card h3,.catalog-card h3{margin:8px 0 3px;overflow-wrap:anywhere}.result-card p,.catalog-card p{color:#555;margin:0 0 8px}.result-card small{display:block;min-height:32px}.listen-link,.catalog-actions a{display:inline-block;margin-top:9px;font-size:11px;font-weight:700}.catalog-head{padding-top:18px;padding-bottom:10px}.catalog-head h2{margin-bottom:2px}.catalog-grid{padding-bottom:50px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.track-id{font-size:10px;color:#666}.track-tags{display:flex;gap:4px;flex-wrap:wrap;min-height:23px}.track-tags span{font-size:10px;padding:2px 5px;background:#efefef}.rating-form{margin-top:10px;padding-top:9px;border-top:1px solid #ddd;display:flex;align-items:end;gap:5px;flex-wrap:wrap}.rating-form label{display:grid;gap:3px;font-size:10px}.rating-form input{width:110px;min-width:0;padding:5px}.rating-form select{min-width:50px;padding:5px}.rating-form button{padding:6px 9px;font-size:11px}@media(max-width:950px){.rec-results,.catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.rec-head,.rec-tabs,.rec-controls,.rec-output,.catalog-head,.catalog-grid{padding-left:17px;padding-right:17px}.rec-results,.catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.rec-results,.catalog-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}

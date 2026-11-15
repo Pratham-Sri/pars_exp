@@ -1,0 +1,234 @@
+{
+  "access": {
+    "embargo": {
+      "active": false,
+      "reason": null
+    },
+    "files": "public",
+    "record": "public",
+    "status": "open"
+  },
+  "created": "2022-02-15T13:05:56.769710+00:00",
+  "custom_fields": {},
+  "deletion_status": {
+    "is_deleted": false,
+    "status": "P"
+  },
+  "files": {
+    "count": 2,
+    "enabled": true,
+    "entries": {
+      "lastfm-dataset-1K.tar.gz": {
+        "access": {
+          "hidden": false
+        },
+        "checksum": "md5:a79a6808f54f73354789a9fb02cb1e41",
+        "ext": "gz",
+        "id": "db40faae-42a5-4547-9005-9e3a8162bc08",
+        "key": "lastfm-dataset-1K.tar.gz",
+        "links": {
+          "content": "https://zenodo.org/api/records/6090214/files/lastfm-dataset-1K.tar.gz/content",
+          "self": "https://zenodo.org/api/records/6090214/files/lastfm-dataset-1K.tar.gz"
+        },
+        "metadata": null,
+        "mimetype": "application/gzip",
+        "size": 672741554,
+        "storage_class": "L"
+      },
+      "lastfm-dataset-360K.tar.gz": {
+        "access": {
+          "hidden": false
+        },
+        "checksum": "md5:635e6ed3fc873aa4ba33aba0ebce02b1",
+        "ext": "gz",
+        "id": "79559a4f-95be-4de4-a87e-4f881343d27d",
+        "key": "lastfm-dataset-360K.tar.gz",
+        "links": {
+          "content": "https://zenodo.org/api/records/6090214/files/lastfm-dataset-360K.tar.gz/content",
+          "self": "https://zenodo.org/api/records/6090214/files/lastfm-dataset-360K.tar.gz"
+        },
+        "metadata": null,
+        "mimetype": "application/gzip",
+        "size": 569202935,
+        "storage_class": "L"
+      }
+    },
+    "order": [],
+    "total_bytes": 1241944489
+  },
+  "id": "6090214",
+  "is_draft": false,
+  "is_published": true,
+  "links": {
+    "access": "https://zenodo.org/api/records/6090214/access",
+    "access_grants": "https://zenodo.org/api/records/6090214/access/grants",
+    "access_links": "https://zenodo.org/api/records/6090214/access/links",
+    "access_request": "https://zenodo.org/api/records/6090214/access/request",
+    "access_users": "https://zenodo.org/api/records/6090214/access/users",
+    "communities": "https://zenodo.org/api/records/6090214/communities",
+    "communities-suggestions": "https://zenodo.org/api/records/6090214/communities-suggestions",
+    "doi": "https://doi.org/10.5281/zenodo.6090214",
+    "draft": "https://zenodo.org/api/records/6090214/draft",
+    "file_modification": "https://zenodo.org/api/records/6090214/file-modification",
+    "files": "https://zenodo.org/api/records/6090214/files",
+    "latest": "https://zenodo.org/api/records/6090214/versions/latest",
+    "latest_html": "https://zenodo.org/records/6090214/latest",
+    "media_files": "https://zenodo.org/api/records/6090214/media-files",
+    "parent": "https://zenodo.org/api/records/6090213",
+    "parent_doi": "https://doi.org/10.5281/zenodo.6090213",
+    "parent_doi_html": "https://zenodo.org/doi/10.5281/zenodo.6090213",
+    "parent_html": "https://zenodo.org/records/6090213",
+    "preview_html": "https://zenodo.org/records/6090214?preview=1",
+    "quota_increase": "https://zenodo.org/api/records/6090214/quota-increase",
+    "request_deletion": "https://zenodo.org/api/records/6090214/request-deletion",
+    "requests": "https://zenodo.org/api/records/6090214/requests",
+    "reserve_doi": "https://zenodo.org/api/records/6090214/draft/pids/doi",
+    "self": "https://zenodo.org/api/records/6090214",
+    "self_doi": "https://doi.org/10.5281/zenodo.6090214",
+    "self_doi_html": "https://zenodo.org/doi/10.5281/zenodo.6090214",
+    "self_html": "https://zenodo.org/records/6090214",
+    "self_iiif_manifest": "https://zenodo.org/api/iiif/record:6090214/manifest",
+    "self_iiif_sequence": "https://zenodo.org/api/iiif/record:6090214/sequence/default",
+    "versions": "https://zenodo.org/api/records/6090214/versions"
+  },
+  "media_files": {
+    "count": 0,
+    "enabled": false,
+    "entries": {},
+    "order": [],
+    "total_bytes": 0
+  },
+  "metadata": {
+    "creators": [
+      {
+        "affiliations": [
+          {
+            "name": "Music Technology Group"
+          }
+        ],
+        "person_or_org": {
+          "family_name": "\u00d2scar Celma",
+          "name": "\u00d2scar Celma",
+          "type": "personal"
+        }
+      }
+    ],
+    "description": "<p>This is a common Zenodo repository for both<a href=\"http://ocelma.net/MusicRecommendationDataset/lastfm-360K.html\"> lastfm-360K</a> and <a href=\"http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html\">lastfm-1K</a> datasets. See below the details of both datasets, including license, acknowledgements, contact, and instructions to cite.</p>\n\n<p>&nbsp;</p>\n\n<p><strong>LASTFM-360K (version 1.2, March 2010).</strong></p>\n\n<ul>\n\t<li><strong>What is this?</strong> This dataset contains &lt;user, artist, plays&gt; tuples (for ~360,000 users) collected from <a href=\"http://www.last.fm/api\">Last.fm API</a>, using the <a href=\"http://www.last.fm/api/show?service=300\">user.getTopArtists()</a> method.</li>\n\t<li><strong>Files:</strong>\n\t<ul>\n\t\t<li>usersha1-artmbid-artname-plays.tsv (MD5: be672526eb7c69495c27ad27803148f1)</li>\n\t\t<li>usersha1-profile.tsv (MD5: 51159d4edf6a92cb96f87768aa2be678)</li>\n\t\t<li>mbox_sha1sum.py (MD5: feb3485eace85f3ba62e324839e6ab39)</li>\n\t</ul>\n\t</li>\n\t<li><strong>Data Statistics:</strong>\n\t<ul>\n\t\t<li>File <em>usersha1-artmbid-artname-plays.tsv</em>:\n\t\t<ul>\n\t\t\t<li>Total Lines: 17,559,530</li>\n\t\t\t<li>Unique Users: 359,347</li>\n\t\t\t<li>Artists with <a href=\"http://musicbrainz.org/\">MBID</a>: 186,642</li>\n\t\t\t<li>Artists without <a href=\"http://musicbrainz.org/\">MBID</a>: 107,373</li>\n\t\t</ul>\n\t\t</li>\n\t</ul>\n\t</li>\n\t<li><strong>Data Format:</strong> The data is formatted one entry per line as follows (tab separated &quot;\\t&quot;):\n\t<ul>\n\t\t<li>File <em>usersha1-artmbid-artname-plays.tsv</em>:\n\t\t<pre>user-mboxsha1 \\t musicbrainz-artist-id \\t artist-name \\t plays</pre>\n\t\t</li>\n\t\t<li>File <em>usersha1-profile.tsv</em>:\n\t\t<pre>user-mboxsha1 \\t gender (m|f|empty) \\t age (int|empty) \\t country (str|empty) \\t signup (date|empty)</pre>\n\t\t</li>\n\t</ul>\n\t</li>\n\t<li><strong>Example:</strong>\n\t<ul>\n\t\t<li>File <em>usersha1-artmbid-artname-plays.tsv</em>:\n\t\t<pre>000063d3fe1cf2ba248b9e3c3f0334845a27a6be \\t a3cb23fc-acd3-4ce0-8f36-1e5aa6a18432 \\t u2 \\t 31 ...</pre>\n\t\t</li>\n\t\t<li>File <em>usersha1-profile.tsv</em>:\n\t\t<pre>000063d3fe1cf2ba248b9e3c3f0334845a27a6be \\t m \\t 19 \\t Mexico \\t Apr 28, 2008 ...</pre>\n\t\t</li>\n\t</ul>\n\t</li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>LASTFM-1K (version 1.0, March 2010).</strong></p>\n\n<ul>\n\t<li><strong>What is this?</strong> This dataset contains &lt;user, timestamp, artist, song&gt; tuples collected from <a href=\"http://www.last.fm/api\">Last.fm API</a>, using the <a href=\"http://www.last.fm/api/show?service=278\">user.getRecentTracks()</a> method. This dataset represents the whole listening habits (till May, 5th 2009) for nearly 1,000 users.</li>\n\t<li><strong>Files:</strong>\n\t<ul>\n\t\t<li>userid-timestamp-artid-artname-traid-traname.tsv (MD5: 64747b21563e3d2aa95751e0ddc46b68)</li>\n\t\t<li>userid-profile.tsv (MD5: c53608b6b445db201098c1489ea497df)</li>\n\t</ul>\n\t</li>\n\t<li><strong>Data Statistics:</strong>\n\t<ul>\n\t\t<li>File <em>userid-timestamp-artid-artname-traid-traname.tsv:</em>\n\t\t<ul>\n\t\t\t<li>Total Lines: 19,150,868</li>\n\t\t\t<li>Unique Users: 992</li>\n\t\t\t<li>Artists with MBID: 107,528</li>\n\t\t\t<li>Artists without MBDID: 69,420</li>\n\t\t</ul>\n\t\t</li>\n\t</ul>\n\t</li>\n\t<li><strong>Data Format:</strong> The data is formatted one entry per line as follows (tab separated, &quot;\\t&quot;):\n\t<ul>\n\t\t<li>File <em>userid-timestamp-artid-artname-traid-traname.tsv</em>:\n\t\t<pre>userid \\t timestamp \\t musicbrainz-artist-id \\t artist-name \\t musicbrainz-track-id \\t track-name</pre>\n\t\t</li>\n\t\t<li>File <em>userid-profile.tsv</em>:\n\t\t<pre>userid \\t gender (&#39;m&#39;|&#39;f&#39;|empty) \\t age (int|empty) \\t country (str|empty) \\t signup (date|empty)</pre>\n\t\t</li>\n\t</ul>\n\t</li>\n\t<li><strong>Example:</strong>\n\t<ul>\n\t\t<li>File <em>userid-timestamp-artid-artname-traid-traname.tsv</em>:\n\t\t<pre>user_000639 \\t 2009-04-08T01:57:47Z \\t MBID \\t The Dogs D&#39;Amour \\t MBID \\t Fall in Love Again?\nuser_000639 \\t 2009-04-08T01:53:56Z \\t MBID \\t The Dogs D&#39;Amour \\t MBID \\t Wait Until I&#39;m Dead ...</pre>\n\t\t</li>\n\t\t<li>File <em>userid-profile.tsv</em>:\n\t\t<pre>user_000639 \\t m \\t Mexico \\t Apr 27, 2005 ...</pre>\n\t\t</li>\n\t</ul>\n\t</li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>LICENSE OF BOTH DATASETS</strong>. The data contained in both datasets is distributed with permission of <a href=\"http://last.fm\">Last.fm</a>. The data is made available for non-commercial use. Those interested in using the data or web services in a commercial context should contact:</p>\n\n<p><em>partners [at] last [dot] fm</em></p>\n\n<p>For more information see Last.fm <a href=\"http://www.last.fm/api/tos\">terms of service</a></p>\n\n<p>&nbsp;</p>\n\n<p><strong>ACKNOWLEDGEMENTS. </strong>Thanks to Last.fm for providing the access to this data via their web services. Special thanks to <a href=\"http://www.last.fm/user/nova77LF\">Norman Casagrande</a>.</p>\n\n<p>&nbsp;</p>\n\n<p><strong>REFERENCES. </strong>When using this dataset you must reference the <a href=\"http://last.fm\">Last.fm</a> webpage. Optionally (not mandatory at all!), you can cite <em>Chapter 3</em> of <a href=\"http://ocelma.net/MusicRecommendationBook/index.html\">this book</a>:</p>\n\n<pre>@book{Celma:Springer2010,\n    author = {Celma, O.},\n    title = {{Music Recommendation and Discovery in the Long Tail}},\n    publisher = {Springer},\n    year = {2010}\n}\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>CONTACT: </strong>This data was collected by <a href=\"http://ocelma.net/\">&Ograve;scar Celma</a> @ <a href=\"http://mtg.upf.edu\">MTG</a>/<a href=\"http://upf.edu\">UPF</a></p>",
+    "publication_date": "2010-03-01",
+    "publisher": "Zenodo",
+    "resource_type": {
+      "id": "dataset",
+      "title": {
+        "de": "Datensatz",
+        "en": "Dataset"
+      }
+    },
+    "rights": [
+      {
+        "description": {
+          "en": ""
+        },
+        "id": "other-nc",
+        "title": {
+          "en": "Other (Non-Commercial)"
+        }
+      }
+    ],
+    "subjects": [
+      {
+        "subject": "music recommendation"
+      },
+      {
+        "subject": "lastfm"
+      }
+    ],
+    "title": "lastfm Music Recommendation Dataset",
+    "version": "1.2"
+  },
+  "parent": {
+    "access": {
+      "owned_by": {
+        "user": "46759"
+      }
+    },
+    "communities": {
+      "default": "86d38da6-f853-44b1-bd7a-91a82d2233ef",
+      "entries": [
+        {
+          "access": {
+            "member_policy": "open",
+            "members_visibility": "public",
+            "record_submission_policy": "open",
+            "review_policy": "open",
+            "visibility": "public"
+          },
+          "children": {
+            "allow": false
+          },
+          "created": "2018-05-22T08:43:52.609580+00:00",
+          "custom_fields": {},
+          "deletion_status": {
+            "is_deleted": false,
+            "status": "P"
+          },
+          "id": "86d38da6-f853-44b1-bd7a-91a82d2233ef",
+          "links": {},
+          "metadata": {
+            "curation_policy": "",
+            "page": "<p>The <strong>Music Technology Group (MTG) </strong>of the Universitat Pompeu Fabra in Barcelona, part of its Department of Information and Communication Technologies,&nbsp;carries out research on topics such as audio signal processing, music information retrieval, musical interfaces, and computational musicology. The MTG wants to contribute to the improvement of the information and&nbsp;communication&nbsp;technologies related to sound and music, carrying out competitive research at the international level and at the same time transferring its results to society. To that goal, the MTG aims at finding a balance between basic and applied research while promoting interdisciplinary approaches that incorporate knowledge and methodologies from both scientific/technological and humanistic/artistic disciplines.</p>",
+            "title": "Music Technology Group"
+          },
+          "revision_id": 0,
+          "slug": "mtgupf",
+          "updated": "2018-05-22T09:08:00.286528+00:00"
+        }
+      ],
+      "ids": [
+        "86d38da6-f853-44b1-bd7a-91a82d2233ef"
+      ]
+    },
+    "id": "6090213",
+    "pids": {
+      "doi": {
+        "client": "datacite",
+        "identifier": "10.5281/zenodo.6090213",
+        "provider": "datacite"
+      }
+    }
+  },
+  "pids": {
+    "doi": {
+      "client": "datacite",
+      "identifier": "10.5281/zenodo.6090214",
+      "provider": "datacite"
+    },
+    "oai": {
+      "identifier": "oai:zenodo.org:6090214",
+      "provider": "oai"
+    }
+  },
+  "revision_id": 7,
+  "stats": {
+    "all_versions": {
+      "data_volume": 1893571948809.0,
+      "downloads": 2970,
+      "unique_downloads": 1899,
+      "unique_views": 5351,
+      "views": 5759
+    },
+    "this_version": {
+      "data_volume": 1887155149126.0,
+      "downloads": 2960,
+      "unique_downloads": 1890,
+      "unique_views": 5323,
+      "views": 5729
+    }
+  },
+  "status": "published",
+  "swh": {},
+  "updated": "2022-02-15T16:00:52.305592+00:00",
+  "versions": {
+    "index": 1,
+    "is_latest": true
+  }
+}

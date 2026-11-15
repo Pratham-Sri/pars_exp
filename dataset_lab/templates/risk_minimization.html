@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+{% block title %}Experiment 05 · Bayesian Risk Minimization (3 Classes, 3 Actions){% endblock %}
+
+{% block content %}
+<div class="crumb">
+  <a href="{{ url_for('main.home') }}">EXPERIMENTS</a> / <span>EXP 05: RISK MINIMIZATION</span>
+</div>
+
+<header class="page-head">
+  <div>
+    <h1>Risk Minimization</h1>
+    <p>Bayesian Decision Theory (3 Classes, 3 Actions, Loss Matrix).</p>
+  </div>
+  <div class="head-stamp">
+    MIN RISK: {{ '%.2f'|format(calc.optimal_risk) }}<br>
+    3 STATES · 3 ACTIONS
+  </div>
+</header>
+
+<!-- Minimalist Executive Summary -->
+<div class="audit-ribbon" style="margin-bottom:24px;">
+  <div class="audit-stat">
+    <span class="audit-label">DECISION CRITERION</span>
+    <div class="audit-val"><span class="pulse-indicator"></span> MIN RISK</div>
+    <div class="audit-sub">R(αᵢ | x) = ∑ λ(αᵢ | ωⱼ) · P(ωⱼ | x)</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">STATE SPACE (CLASSES)</span>
+    <div class="audit-val">3 STATES</div>
+    <div class="audit-sub">ω₁ Normal · ω₂ Critical · ω₃ Moderate</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">ACTION SPACE</span>
+    <div class="audit-val">3 ACTIONS</div>
+    <div class="audit-sub">α₁ Routine · α₂ Halt · α₃ Specialist</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">CURRENT TRIGGER</span>
+    <div class="audit-val" style="color:{{ calc.optimal_action.color }};" id="ribbonTriggerText">
+      {{ calc.optimal_action.symbol }} {{ calc.optimal_action.name.split('(')[0].strip() }}
+    </div>
+    <div class="audit-sub">Expected Loss: <span id="ribbonRiskVal">{{ '%.2f'|format(calc.optimal_risk) }}</span></div>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- SECTION 1: Interactive Risk Calculator & Live Trigger Reflection -->
+<!-- ======================================================================= -->
+<section class="bayes-interactive-card">
+  <div class="dataset-heading">
+    <h2>Interactive Risk Calculator</h2>
+    <span class="status">DECISION RULE</span>
+  </div>
+
+  <div class="bayes-grid" style="grid-template-columns: 1.05fr 0.95fr; gap: 24px;">
+    <!-- Left Controls Panel -->
+    <div class="bayes-panel">
+      <h3>
+        <span>1. Posterior Probabilities P(ωⱼ | x)</span>
+        <small style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px;">NORMALIZED (SUM = 1.0)</small>
+      </h3>
+
+      <!-- Slider 1 -->
+      <div class="control-group">
+        <div class="control-label">
+          <span>State ω₁: Normal / Benign State</span>
+          <span class="control-val" id="valP1">0.65</span>
+        </div>
+        <input type="range" class="custom-range" id="sliderP1" min="0" max="1" step="0.01" value="0.65" oninput="onPosteriorChange(1)">
+      </div>
+
+      <!-- Slider 2 -->
+      <div class="control-group">
+        <div class="control-label">
+          <span style="color:#b91c1c;">State ω₂: Critical Fault / Pathology</span>
+          <span class="control-val" id="valP2">0.18</span>
+        </div>
+        <input type="range" class="custom-range" id="sliderP2" min="0" max="1" step="0.01" value="0.18" oninput="onPosteriorChange(2)">
+      </div>
+
+      <!-- Slider 3 -->
+      <div class="control-group">
+        <div class="control-label">
+          <span style="color:#b45309;">State ω₃: Moderate / Suspicious Anomaly</span>
+          <span class="control-val" id="valP3">0.17</span>
+        </div>
+        <input type="range" class="custom-range" id="sliderP3" min="0" max="1" step="0.01" value="0.17" oninput="onPosteriorChange(3)">
+      </div>
+
+      <!-- Loss Matrix Section -->
+      <div style="border-top:1px solid #dce5dc;margin-top:20px;padding-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h4 style="margin:0;font-size:13.5px;color:var(--green-dark);">2. Loss Function Matrix λ(αᵢ | ωⱼ)</h4>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);">EDITABLE CELLS</span>
+        </div>
+
+        <!-- Presets -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          <button type="button" class="preset-tag" onclick="loadLossPreset('asymmetric_critical')">Asymmetric Safety (Miss = 500)</button>
+          <button type="button" class="preset-tag" onclick="loadLossPreset('zero_one_loss')">Symmetric 0-1 (MAP Rule)</button>
+          <button type="button" class="preset-tag" onclick="loadLossPreset('costly_downtime')">Costly Downtime (Halt = 350)</button>
+        </div>
+
+        <!-- Matrix Table -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:11.5px;text-align:center;">
+            <thead>
+              <tr style="background:#edf3ee;border-bottom:1px solid #cbd7ce;">
+                <th style="padding:6px;text-align:left;font-family:'DM Mono',monospace;">Action \ State</th>
+                <th style="padding:6px;font-family:'DM Mono',monospace;color:#164e3d;">ω₁ Normal</th>
+                <th style="padding:6px;font-family:'DM Mono',monospace;color:#b91c1c;">ω₂ Critical</th>
+                <th style="padding:6px;font-family:'DM Mono',monospace;color:#b45309;">ω₃ Moderate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in actions %}
+              {% set r_idx = loop.index0 %}
+              <tr style="border-bottom:1px solid #e2e8e0;">
+                <td style="padding:6px;text-align:left;font-weight:600;font-family:'DM Mono',monospace;color:{{ a.color }};">
+                  {{ a.symbol }} {{ a.name.split('(')[0] }}
+                </td>
+                <td style="padding:4px;">
+                  <input type="number" class="matrix-input" id="m_{{ r_idx }}_0" value="{{ loss_matrix[r_idx][0] }}" step="1" oninput="recalc()">
+                </td>
+                <td style="padding:4px;">
+                  <input type="number" class="matrix-input" id="m_{{ r_idx }}_1" value="{{ loss_matrix[r_idx][1] }}" step="1" oninput="recalc()">
+                </td>
+                <td style="padding:4px;">
+                  <input type="number" class="matrix-input" id="m_{{ r_idx }}_2" value="{{ loss_matrix[r_idx][2] }}" step="1" oninput="recalc()">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Trigger Output Panel -->
+    <div class="bayes-panel">
+      <h3>
+        <span>Operational Action Trigger</span>
+        <span id="triggerStatusTag" style="font-family:'DM Mono',monospace;font-size:10.5px;color:#16a34a;">● REAL-TIME REFLECTED</span>
+      </h3>
+
+      <!-- DYNAMIC TRIGGER DISPLAY CARD (Changes color, badge, title and system protocol directly on page) -->
+      <div class="action-trigger-card" id="triggerCard"
+           style="background:{{ calc.triggered_state.light_color }};border-color:{{ calc.triggered_state.border_color }};">
+        <div class="action-trigger-header">
+          <span style="font:600 11px 'DM Mono',monospace;color:{{ calc.triggered_state.color }};" id="triggerBadge">
+            {{ calc.triggered_state.badge }}
+          </span>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:{{ calc.triggered_state.color }};" id="minRiskBadge">
+            MIN RISK: {{ '%.2f'|format(calc.optimal_risk) }}
+          </span>
+        </div>
+
+        <div class="action-trigger-title" id="triggerTitle" style="color:{{ calc.triggered_state.color }};">
+          {{ calc.triggered_state.title }}
+        </div>
+        <p class="action-trigger-desc" id="triggerDesc" style="color:#334155;">
+          {{ calc.triggered_state.description }}
+        </p>
+
+        <!-- System Log Box reflecting the triggered workflow -->
+        <div class="action-log-box" id="triggerLogBox">
+          <div><b style="color:var(--ink);">[DISPATCH EVENT LOG]</b> Operational state transition executed.</div>
+          <div id="triggerLogLine" style="color:{{ calc.triggered_state.color }};margin-top:4px;">
+            ✓ Action {{ calc.optimal_action.symbol }} executed. Expected loss minimized to {{ '%.2f'|format(calc.optimal_risk) }}.
+          </div>
+        </div>
+      </div>
+
+      <!-- Expected Conditional Risk Comparison -->
+      <div class="risk-meter-box">
+        <h4 style="margin:0 0 12px;font-size:13px;color:var(--green-dark);">
+          Expected Conditional Risks R(αᵢ | x) = ∑ λ(αᵢ | ωⱼ) P(ωⱼ | x)
+        </h4>
+
+        {% for a in actions %}
+        {% set r_idx = loop.index0 %}
+        <div class="risk-meter-row">
+          <span style="font-weight:600;color:{{ a.color }};">
+            {{ a.symbol }} {{ a.name.split('(')[0] }}
+          </span>
+          <span class="risk-meter-val" id="riskVal_{{ r_idx }}" style="color:{{ a.color }};">
+            {{ '%.2f'|format(calc.risks[r_idx].risk_value) }}
+          </span>
+        </div>
+        <div class="meter-track" style="margin-bottom:10px;height:8px;">
+          <div class="meter-fill" id="riskBar_{{ r_idx }}"
+               style="width: 50%; background: {{ a.color }};"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Decision Insight / Comparison with Naive MAP -->
+      <div class="analysis-block" style="margin:0;padding:12px 16px;">
+        <span class="obs-tag" style="background:#eef4ee;color:var(--green);font-size:9.5px;">RISK VS. NAIVE MAP COMPARISON</span>
+        <p id="riskInsightText" style="margin:6px 0 0;font-size:12px;line-height:1.6;color:#475569;">
+          Notice: State ω₁ has highest probability (65.0%), so naive MAP would choose Action α₁ (Routine Clearance). However, because releasing a critical defect carries a severe penalty of 500, Bayesian Risk Minimization triggers Action α₃ (Specialist Review) to protect against catastrophic loss!
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================= -->
+<!-- SECTION 2: Pre-Evaluated Diagnostic Scenarios Table -->
+<!-- ======================================================================= -->
+<section class="results-card">
+  <div class="dataset-heading">
+    <h2>Test Scenarios</h2>
+    <span class="status">6 PROFILES</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="background:#f1f5f0;border-bottom:2px solid #cbd7ce;">
+          <th style="padding:9px 10px;text-align:left;font-family:'DM Mono',monospace;">CASE ID</th>
+          <th style="padding:9px 10px;text-align:left;font-family:'DM Mono',monospace;">SCENARIO DESCRIPTION</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">POSTERIORS [ω₁, ω₂, ω₃]</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">CONDITIONAL RISKS [R(α₁), R(α₂), R(α₃)]</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">MIN-RISK ACTION</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">TRIGGERED PROTOCOL</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">VS. NAIVE MAP</th>
+        </tr>
+      </thead>
+      <tbody id="scenarioTableBody">
+        {% for s in test_scenarios %}
+        <tr style="border-bottom:1px solid #e5ede7;">
+          <td style="padding:8px 10px;font-family:'DM Mono',monospace;font-weight:700;color:var(--green);">
+            {{ s.id }}
+          </td>
+          <td style="padding:8px 10px;color:#1e293b;font-weight:600;">
+            {{ s.name }}
+          </td>
+          <td style="padding:8px 10px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;">
+            [{{ '%.2f'|format(s.posteriors[0]) }}, {{ '%.2f'|format(s.posteriors[1]) }}, {{ '%.2f'|format(s.posteriors[2]) }}]
+          </td>
+          <td style="padding:8px 10px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;">
+            [{{ '%.1f'|format(s.risks[0]) }}, {{ '%.1f'|format(s.risks[1]) }}, {{ '%.1f'|format(s.risks[2]) }}]
+          </td>
+          <td style="padding:8px 10px;text-align:center;font-weight:700;">
+            {{ s.optimal_action }} <small style="color:var(--muted);">(Risk: {{ '%.1f'|format(s.optimal_risk) }})</small>
+          </td>
+          <td style="padding:8px 10px;text-align:center;">
+            <span class="tag-correct" style="font-size:10px;">{{ s.triggered_badge }}</span>
+          </td>
+          <td style="padding:8px 10px;text-align:center;">
+            {% if s.differs_from_map %}
+              <span style="color:#b45309;font-weight:600;font-size:11px;">★ Overrode MAP {{ s.map_symbol }}</span>
+            {% else %}
+              <span style="color:#64748b;font-size:11px;">Agrees with MAP</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Navigation Links -->
+
+<!-- Workspace Navigation Links -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:24px 0;border-top:1px solid var(--line);margin-top:40px;flex-wrap:wrap;gap:12px;">
+  <a href="{{ url_for('main.experiment', slug='dataset-explorer') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 01: Retinal &amp; CNC Milling
+  </a>
+  <a href="{{ url_for('main.experiment', slug='multimodal-feature-extraction') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 02: Frank Ocean Multimodal Signals
+  </a>
+  <a href="{{ url_for('main.experiment', slug='bayesian-classification') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 03: Bayesian Pattern Classification
+  </a>
+  <a href="{{ url_for('main.experiment', slug='text-nlp-bayesian') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 04: Text NLP Pipeline
+  </a>
+  <a href="{{ url_for('main.experiment', slug='linear-regression-gradient-descent') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    EXP / 06: Linear Regression from Scratch →
+  </a>
+  <a href="{{ url_for('main.home') }}" style="color:var(--muted);text-decoration:none;font-size:13.5px;">
+    Back to Home Overview →
+  </a>
+</div>
+
+<!-- ======================================================================= -->
+<!-- Client-Side JavaScript: Instant Live Risk & Trigger Computation -->
+<!-- ======================================================================= -->
+<script>
+const PRESETS = {{ loss_presets|tojson }};
+const ACTIONS_META = {{ actions|tojson }};
+
+function onPosteriorChange(changedIndex) {
+  let p1 = parseFloat(document.getElementById("sliderP1").value);
+  let p2 = parseFloat(document.getElementById("sliderP2").value);
+  let p3 = parseFloat(document.getElementById("sliderP3").value);
+
+  // Auto-normalize other two sliders
+  let sum = p1 + p2 + p3;
+  if (sum <= 0) sum = 1;
+  p1 = p1 / sum;
+  p2 = p2 / sum;
+  p3 = p3 / sum;
+
+  document.getElementById("valP1").textContent = p1.toFixed(2);
+  document.getElementById("valP2").textContent = p2.toFixed(2);
+  document.getElementById("valP3").textContent = p3.toFixed(2);
+
+  recalc();
+}
+
+function loadLossPreset(presetKey) {
+  if (PRESETS[presetKey]) {
+    const mat = PRESETS[presetKey].matrix;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        document.getElementById(`m_${i}_${j}`).value = mat[i][j];
+      }
+    }
+    recalc();
+  }
+}
+
+function getLossMatrix() {
+  const mat = [];
+  for (let i = 0; i < 3; i++) {
+    const row = [];
+    for (let j = 0; j < 3; j++) {
+      row.push(parseFloat(document.getElementById(`m_${i}_${j}`).value) || 0.0);
+    }
+    mat.push(row);
+  }
+  return mat;
+}
+
+async function recalc() {
+  const p1 = parseFloat(document.getElementById("valP1").textContent) || 0.65;
+  const p2 = parseFloat(document.getElementById("valP2").textContent) || 0.18;
+  const p3 = parseFloat(document.getElementById("valP3").textContent) || 0.17;
+  const matrix = getLossMatrix();
+
+  try {
+    const resp = await fetch("/api/risk/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ p1: p1, p2: p2, p3: p3, loss_matrix: matrix })
+    });
+    const data = await resp.json();
+    if (data.status === "success") {
+      updateTriggerUI(data.calc);
+      updateScenarioTable(data.scenarios);
+    }
+  } catch (err) {
+    console.error("Risk calc error:", err);
+  }
+}
+
+function updateTriggerUI(calc) {
+  const opt = calc.optimal_action;
+  const trig = calc.triggered_state;
+
+  // 1. Update Card Styling & Reflection
+  const card = document.getElementById("triggerCard");
+  card.style.background = trig.light_color;
+  card.style.borderColor = trig.border_color;
+
+  document.getElementById("triggerBadge").textContent = trig.badge;
+  document.getElementById("triggerBadge").style.color = trig.color;
+
+  document.getElementById("minRiskBadge").textContent = "MIN RISK: " + calc.optimal_risk.toFixed(2);
+  document.getElementById("minRiskBadge").style.color = trig.color;
+
+  document.getElementById("triggerTitle").textContent = trig.title;
+  document.getElementById("triggerTitle").style.color = trig.color;
+
+  document.getElementById("triggerDesc").textContent = trig.description;
+
+  document.getElementById("triggerLogLine").textContent = "✓ Action " + opt.symbol + " executed. Expected loss minimized to " + calc.optimal_risk.toFixed(2) + ".";
+  document.getElementById("triggerLogLine").style.color = trig.color;
+
+  // 2. Update Ribbon
+  document.getElementById("ribbonTriggerText").textContent = opt.symbol + " " + opt.name.split('(')[0].trim();
+  document.getElementById("ribbonTriggerText").style.color = opt.color;
+  document.getElementById("ribbonRiskVal").textContent = calc.optimal_risk.toFixed(2);
+
+  // 3. Update Risk Bars
+  const maxRisk = Math.max(...calc.risks.map(r => r.risk_value), 1);
+  calc.risks.forEach((r, idx) => {
+    document.getElementById(`riskVal_${idx}`).textContent = r.risk_value.toFixed(2);
+    const pct = Math.min(100, Math.max(8, (r.risk_value / maxRisk) * 100));
+    document.getElementById(`riskBar_${idx}`).style.width = pct + "%";
+  });
+
+  // 4. Update Insight Narrative
+  const p1 = (calc.norm_posteriors[0] * 100).toFixed(1);
+  const p2 = (calc.norm_posteriors[1] * 100).toFixed(1);
+  const p3 = (calc.norm_posteriors[2] * 100).toFixed(1);
+  const mapSymbol = calc.map_class.symbol;
+
+  let insight = "";
+  if (opt.id === "alpha_1") {
+    insight = `Normal state probability is high (${p1}%), and expected risk R(α₁) is minimal (${calc.optimal_risk.toFixed(2)}). Standard clearance is safely triggered.`;
+  } else if (opt.id === "alpha_2") {
+    insight = `Critical state probability (${p2}%) carries such high penalty that emergency halt R(α₂) is the lowest risk option (${calc.optimal_risk.toFixed(2)}), immediately tripping system safety interlocks!`;
+  } else {
+    insight = `State probabilities are ambiguous (${p1}% normal vs ${p2}% critical vs ${p3}% moderate). Because catastrophic misses cost heavily, Action α₃ (Specialist Review) is triggered to achieve minimum expected loss (${calc.optimal_risk.toFixed(2)}), overriding naive MAP decision rule!`;
+  }
+  document.getElementById("riskInsightText").textContent = insight;
+}
+
+function updateScenarioTable(scenarios) {
+  const tbody = document.getElementById("scenarioTableBody");
+  let html = "";
+  scenarios.forEach(s => {
+    const mapDiffHtml = s.differs_from_map
+      ? `<span style="color:#b45309;font-weight:600;font-size:11px;">★ Overrode MAP ${s.map_symbol}</span>`
+      : `<span style="color:#64748b;font-size:11px;">Agrees with MAP</span>`;
+
+    html += `
+      <tr style="border-bottom:1px solid #e5ede7;">
+        <td style="padding:8px 10px;font-family:'DM Mono',monospace;font-weight:700;color:var(--green);">${s.id}</td>
+        <td style="padding:8px 10px;color:#1e293b;font-weight:600;">${s.name}</td>
+        <td style="padding:8px 10px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;">
+          [${s.posteriors[0].toFixed(2)}, ${s.posteriors[1].toFixed(2)}, ${s.posteriors[2].toFixed(2)}]
+        </td>
+        <td style="padding:8px 10px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;">
+          [${s.risks[0].toFixed(1)}, ${s.risks[1].toFixed(1)}, ${s.risks[2].toFixed(1)}]
+        </td>
+        <td style="padding:8px 10px;text-align:center;font-weight:700;">
+          ${s.optimal_action} <small style="color:var(--muted);">(Risk: ${s.optimal_risk.toFixed(1)})</small>
+        </td>
+        <td style="padding:8px 10px;text-align:center;">
+          <span class="tag-correct" style="font-size:10px;">${s.triggered_badge}</span>
+        </td>
+        <td style="padding:8px 10px;text-align:center;">${mapDiffHtml}</td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
+}
+
+</script>
+{% endblock %}

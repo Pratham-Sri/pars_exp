@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+{% block title %}Bayesian Classification{% endblock %}
+
+{% block content %}
+<div class="crumb">
+  <a href="{{ url_for('main.home') }}">EXPERIMENTS</a> / <span>EXP 03: BAYESIAN CLASSIFIER</span>
+</div>
+
+<header class="page-head">
+  <div>
+    <h1>Bayesian Classification</h1>
+    <p>Single &amp; Multi-Feature (QDA) Gaussian Pattern Classification.</p>
+  </div>
+  <div class="head-stamp">
+    ACCURACY: {{ eval_data.metrics.acc_2d_pct }}<br>
+    2 DATASETS LOADED
+  </div>
+</header>
+
+<!-- Dataset Selector Bar -->
+<div style="background:#ffffff;border:1px solid #000;padding:12px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div style="display:flex;gap:8px;">
+    <a href="{{ url_for('main.experiment', slug='bayesian-classification', dataset='penguins') }}"
+       class="segmented-btn {% if active_ds == 'penguins' %}active{% endif %}"
+       style="text-decoration:none;border:1px solid #000 !important;padding:6px 12px;">
+      Palmer Penguins (N=333)
+    </a>
+    <a href="{{ url_for('main.experiment', slug='bayesian-classification', dataset='wheat_seeds') }}"
+       class="segmented-btn {% if active_ds == 'wheat_seeds' %}active{% endif %}"
+       style="text-decoration:none;border:1px solid #000 !important;padding:6px 12px;">
+      UCI Wheat Seeds (N=210)
+    </a>
+  </div>
+  <div style="font-size:11.5px;font-family:'DM Mono',monospace;">
+    <b>DATASET: {{ eval_data.cfg.name }}</b><br>
+    <span>Total N={{ eval_data.metrics.total_samples }} | Train N={{ eval_data.metrics.train_samples }} (75%) | Test N={{ eval_data.metrics.test_samples }} (25%)</span>
+  </div>
+</div>
+
+
+
+<!-- ======================================================================= -->
+<!-- SECTION 1: Interactive Live Bayesian Classifier Playground -->
+<!-- ======================================================================= -->
+<section class="bayes-interactive-card">
+  <div class="dataset-heading">
+    <h2>Live Classifier</h2>
+    <span class="status">ACTIVE</span>
+  </div>
+
+  <div class="bayes-grid">
+    <!-- Controls Panel -->
+    <div class="bayes-panel">
+      <h3>
+        <span>Inference Controls</span>
+        <small style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px;">ADJUST &amp; OBSERVE</small>
+      </h3>
+
+      <!-- Feature Mode Selector -->
+      <label class="control-label">CLASSIFICATION MODE</label>
+      <div class="segmented-toggle" id="modeSelector">
+        <button type="button" class="segmented-btn active" data-mode="multi" onclick="setMode('multi')">2D Multi-Feature (QDA)</button>
+        <button type="button" class="segmented-btn" data-mode="single" onclick="setMode('single')">1D Single-Feature (x₁)</button>
+      </div>
+
+      <!-- Prior Distribution Selector -->
+      <label class="control-label">PRIOR DISTRIBUTION P(ωⱼ)</label>
+      <div class="segmented-toggle" id="priorSelector">
+        <button type="button" class="segmented-btn active" data-priors="empirical" onclick="setPriorMode('empirical')">Empirical Priors (Training Split)</button>
+        <button type="button" class="segmented-btn" data-priors="equal" onclick="setPriorMode('equal')">Equal / Uniform (0.333 each)</button>
+      </div>
+
+      <!-- Slider 1 -->
+      <div class="control-group">
+        <div class="control-label">
+          <span>Feature x₁: {{ eval_data.cfg.feat_2d_labels[0] }}</span>
+          <span class="control-val" id="valX1">{{ '%.2f'|format(eval_data.cfg.slider_1_range[3]) }}</span>
+        </div>
+        <input type="range" class="custom-range" id="sliderX1"
+               min="{{ eval_data.cfg.slider_1_range[0] }}"
+               max="{{ eval_data.cfg.slider_1_range[1] }}"
+               step="{{ eval_data.cfg.slider_1_range[2] }}"
+               value="{{ eval_data.cfg.slider_1_range[3] }}"
+               oninput="updateInference()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;font-family:'DM Mono',monospace;">
+          <span>Min: {{ eval_data.cfg.slider_1_range[0] }}</span>
+          <span>Mid: {{ (eval_data.cfg.slider_1_range[0] + eval_data.cfg.slider_1_range[1]) / 2 }}</span>
+          <span>Max: {{ eval_data.cfg.slider_1_range[1] }}</span>
+        </div>
+      </div>
+
+      <!-- Slider 2 -->
+      <div class="control-group" id="groupX2">
+        <div class="control-label">
+          <span>Feature x₂: {{ eval_data.cfg.feat_2d_labels[1] }}</span>
+          <span class="control-val" id="valX2">{{ '%.2f'|format(eval_data.cfg.slider_2_range[3]) }}</span>
+        </div>
+        <input type="range" class="custom-range" id="sliderX2"
+               min="{{ eval_data.cfg.slider_2_range[0] }}"
+               max="{{ eval_data.cfg.slider_2_range[1] }}"
+               step="{{ eval_data.cfg.slider_2_range[2] }}"
+               value="{{ eval_data.cfg.slider_2_range[3] }}"
+               oninput="updateInference()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;font-family:'DM Mono',monospace;">
+          <span>Min: {{ eval_data.cfg.slider_2_range[0] }}</span>
+          <span>Mid: {{ (eval_data.cfg.slider_2_range[0] + eval_data.cfg.slider_2_range[1]) / 2 }}</span>
+          <span>Max: {{ eval_data.cfg.slider_2_range[1] }}</span>
+        </div>
+      </div>
+
+      <!-- Quick Presets from Actual Test Samples -->
+      <div class="preset-container">
+        <span style="font-size:11px;font-weight:600;color:var(--muted);width:100%;">LOAD ACTUAL TEST SAMPLES:</span>
+        {% for row in eval_data.test_rows[:4] %}
+        <button type="button" class="preset-tag" onclick="loadPreset({{ row.x1 }}, {{ row.x2 }}, 'multi')">
+          {{ row.test_id }}: True {{ row.true_class }} (x=[{{ '%.1f'|format(row.x1) }}, {{ '%.1f'|format(row.x2) }}])
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Live Prediction Output Panel -->
+    <div class="bayes-panel">
+      <h3>
+        <span>Bayesian Decision Results</span>
+
+      </h3>
+
+      <!-- MAP Winner Banner -->
+      <div class="map-badge" id="mapBanner">
+        <div>
+          <div class="map-title">MAXIMUM A POSTERIORI (MAP) PREDICTION</div>
+          <div class="map-decision" id="mapDecision">
+            <span id="mapSymbol" style="font-size:22px;">{{ eval_data.classes[0] }}</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">POSTERIOR CONFIDENCE</div>
+          <div class="map-conf" id="mapConfidence">--%</div>
+        </div>
+      </div>
+
+      <!-- Probability Bars -->
+      <div class="result-card-inner">
+        {% for c in eval_data.classes %}
+        <div class="meter-row">
+          <div class="meter-head">
+            <span style="color:{{ eval_data.cfg.class_colors[c] }};">● {{ eval_data.cfg.class_symbols[c] }}</span>
+            <b id="postVal_{{ loop.index0 }}">--%</b>
+          </div>
+          <div class="meter-track">
+            <div class="meter-fill" id="meter_{{ loop.index0 }}" style="width: 33%; background: {{ eval_data.cfg.class_colors[c] }};"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;">
+            <span id="lhVal_{{ loop.index0 }}">p(x|{{ c }}) Likelihood: --</span>
+            <span id="priorVal_{{ loop.index0 }}">Prior: {{ '%.1f'|format(eval_data.priors[c] * 100) }}%</span>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Evidence Row -->
+        <div style="border-top:1px dashed #d5e0d7;margin-top:14px;padding-top:10px;display:flex;justify-content:space-between;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);">
+          <span>Marginal Evidence p(x) = ∑ p(x|ωₖ)·P(ωₖ):</span>
+          <b id="valEvidence" style="color:var(--ink);">--</b>
+        </div>
+      </div>
+
+      <div style="margin:0;padding:8px 12px;font-size:11px;color:#475569;font-family:'DM Mono',monospace;" id="decisionInsight"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================= -->
+<!-- SECTION 2: Model Parameters Estimated from Training Partition -->
+<!-- ======================================================================= -->
+<section class="dataset-card">
+  <div class="dataset-heading">
+    <h2>Trained Parameters</h2>
+    <span class="status">N={{ eval_data.metrics.train_samples }}</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table" style="width:100%;border-collapse:collapse;margin-top:12px;">
+      <thead>
+        <tr style="background:#f1f5f0;border-bottom:2px solid #cbd7ce;">
+          <th style="padding:10px 12px;text-align:left;font-family:'DM Mono',monospace;">CLASS</th>
+          <th style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;">PRIOR P(ωⱼ)</th>
+          <th style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;">1D MEAN ({{ eval_data.cfg.feat_1d_label }})</th>
+          <th style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;">1D STD DEV σ</th>
+          <th style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;">2D MEAN VECTOR [μ₁, μ₂]ᵀ</th>
+          <th style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;">2D COVARIANCE MATRIX Σⱼ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in eval_data.classes %}
+        <tr style="border-bottom:1px solid #e2e8e0;font-size:12.5px;">
+          <td style="padding:10px 12px;font-weight:700;color:{{ eval_data.cfg.class_colors[c] }};">
+            {{ eval_data.cfg.class_symbols[c] }}
+          </td>
+          <td style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;">
+            <b>{{ '%.3f'|format(eval_data.priors[c]) }}</b> ({{ '%.1f'|format(eval_data.priors[c] * 100) }}%)
+          </td>
+          <td style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;">
+            {{ '%.2f'|format(eval_data.params_1d[c].mean) }}
+          </td>
+          <td style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;">
+            {{ '%.2f'|format(eval_data.params_1d[c].std) }}
+          </td>
+          <td style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;color:var(--green);font-weight:600;">
+            [{{ '%.2f'|format(eval_data.params_2d[c].mean[0]) }}, {{ '%.2f'|format(eval_data.params_2d[c].mean[1]) }}]ᵀ
+          </td>
+          <td style="padding:10px 12px;text-align:center;font-family:'DM Mono',monospace;font-size:11.5px;">
+            [[{{ '%.2f'|format(eval_data.params_2d[c].cov[0][0]) }}, {{ '%.2f'|format(eval_data.params_2d[c].cov[0][1]) }}],<br>
+             [{{ '%.2f'|format(eval_data.params_2d[c].cov[1][0]) }}, {{ '%.2f'|format(eval_data.params_2d[c].cov[1][1]) }}]]
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ======================================================================= -->
+<!-- SECTION 3: Real Test Dataset Samples Classification Table -->
+<!-- ======================================================================= -->
+<section class="results-card">
+  <div class="dataset-heading">
+    <h2>Test Ledger (N={{ eval_data.metrics.test_samples }})</h2>
+    <span class="status">25% HELD-OUT</span>
+  </div>
+
+  <!-- Performance Summary Ribbon -->
+  <div class="audit-ribbon" style="margin-bottom:24px;">
+    <div class="audit-stat">
+      <span class="audit-label">TEST DATASET SIZE</span>
+      <div class="audit-val">{{ eval_data.metrics.test_samples }} SAMPLES</div>
+      <div class="audit-sub">Held-out test partition</div>
+    </div>
+    <div class="audit-stat">
+      <span class="audit-label">1D SINGLE-FEATURE ACCURACY</span>
+      <div class="audit-val" style="color:#b45309;">{{ eval_data.metrics.acc_1d_pct }}</div>
+      <div class="audit-sub">Feature: {{ eval_data.cfg.feat_1d_label }}</div>
+    </div>
+    <div class="audit-stat">
+      <span class="audit-label">2D MULTI-FEATURE (QDA) ACCURACY</span>
+      <div class="audit-val" style="color:var(--green);"><span class="pulse-indicator"></span> {{ eval_data.metrics.acc_2d_pct }}</div>
+      <div class="audit-sub">Features: {{ eval_data.cfg.feat_2d_labels|join(' & ') }}</div>
+    </div>
+    <div class="audit-stat">
+      <span class="audit-label">MULTIVARIATE ACCURACY GAIN</span>
+      <div class="audit-val" style="color:#1d4ed8;">{{ eval_data.metrics.gain_pct }}</div>
+      <div class="audit-sub">Covariance boundary separation</div>
+    </div>
+  </div>
+
+  <!-- Test Samples Table -->
+  <div style="overflow-x:auto;max-height:500px;overflow-y:auto;border:1px solid #e0e6df;border-radius:6px;">
+    <table class="data-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead style="position:sticky;top:0;background:#f1f5f0;z-index:2;">
+        <tr style="border-bottom:2px solid #cbd7ce;">
+          <th style="padding:10px 8px;text-align:left;font-family:'DM Mono',monospace;">TEST ID</th>
+          <th style="padding:10px 8px;text-align:center;font-family:'DM Mono',monospace;">FEATURES [x₁, x₂]</th>
+          <th style="padding:10px 8px;text-align:center;font-family:'DM Mono',monospace;">TRUE LABEL</th>
+          <th style="padding:10px 8px;text-align:center;font-family:'DM Mono',monospace;">1D POSTERIORS</th>
+          <th style="padding:10px 8px;text-align:center;font-family:'DM Mono',monospace;">1D PRED</th>
+          <th style="padding:10px 8px;text-align:center;font-family:'DM Mono',monospace;">2D POSTERIORS</th>
+          <th style="padding:10px 8px;text-align:center;font-family:'DM Mono',monospace;">2D PRED (QDA)</th>
+          <th style="padding:10px 8px;text-align:center;font-family:'DM Mono',monospace;">2D STATUS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in eval_data.test_rows %}
+        <tr style="border-bottom:1px solid #e5ede7;">
+          <td style="padding:8px 8px;font-family:'DM Mono',monospace;font-weight:700;color:var(--green);">
+            {{ s.test_id }} <small style="color:var(--muted);">(#{{ s.original_index }})</small>
+          </td>
+          <td style="padding:8px 8px;text-align:center;font-family:'DM Mono',monospace;">
+            [{{ '%.2f'|format(s.x1) }}, {{ '%.2f'|format(s.x2) }}]
+          </td>
+          <td style="padding:8px 8px;text-align:center;font-weight:700;color:{{ s.true_color }};">
+            {{ s.true_class }}
+          </td>
+          <td style="padding:8px 8px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:#475569;">
+            [{% for c in eval_data.classes %}{{ '%.2f'|format(s.post_1d[c]) }}{% if not loop.last %}, {% endif %}{% endfor %}]
+          </td>
+          <td style="padding:8px 8px;text-align:center;font-family:'DM Mono',monospace;">
+            <b style="color:{{ eval_data.cfg.class_colors[s.pred_1d] }};">{{ s.pred_1d }}</b>
+            {% if s.correct_1d %}
+              <span style="color:#16a34a;font-size:10px;">✓</span>
+            {% else %}
+              <span style="color:#dc2626;font-size:10px;">✗</span>
+            {% endif %}
+          </td>
+          <td style="padding:8px 8px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:#1e293b;">
+            [{% for c in eval_data.classes %}{{ '%.2f'|format(s.post_2d[c]) }}{% if not loop.last %}, {% endif %}{% endfor %}]
+          </td>
+          <td style="padding:8px 8px;text-align:center;font-family:'DM Mono',monospace;">
+            <b style="color:{{ eval_data.cfg.class_colors[s.pred_2d] }};">{{ s.pred_2d }}</b>
+            <small style="color:var(--muted);font-size:10px;">({{ '%.0f'|format(s.conf_2d * 100) }}%)</small>
+          </td>
+          <td style="padding:8px 8px;text-align:center;">
+            {% if s.correct_2d %}
+              <span class="tag-correct">CORRECT</span>
+            {% else %}
+              <span class="tag-wrong">MISCLASSIFIED</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Visualization -->
+<section class="results-card">
+  <div class="dataset-heading">
+    <h2>Decision Boundaries</h2>
+    <span class="status">{{ eval_data.cfg.name }}</span>
+  </div>
+  <div style="background:#fff;border:1px solid #000;padding:6px;margin:16px 0;">
+    <img src="{{ chart_url }}" alt="Bayesian Analysis Charts" style="width:100%;display:block;">
+  </div>
+</section>
+
+
+
+<!-- Workspace Navigation Links -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:24px 0;border-top:1px solid var(--line);margin-top:40px;flex-wrap:wrap;gap:12px;">
+  <a href="{{ url_for('main.experiment', slug='dataset-explorer') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 01: Retinal &amp; CNC Milling
+  </a>
+  <a href="{{ url_for('main.experiment', slug='multimodal-feature-extraction') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 02: Frank Ocean Multimodal Signals
+  </a>
+  <a href="{{ url_for('main.experiment', slug='text-nlp-bayesian') }}" style="color:#1e3a8a;text-decoration:none;font-weight:600;font-size:13.5px;">
+    NEXT: EXP / 04 Text NLP &amp; Bayesian Inference →
+  </a>
+  <a href="{{ url_for('main.home') }}" style="color:var(--muted);text-decoration:none;font-size:13.5px;">
+    Back to Workspace Overview →
+  </a>
+</div>
+
+<!-- ======================================================================= -->
+<!-- Client-Side JavaScript: Live Real-Time Calculator on Real Data -->
+<!-- ======================================================================= -->
+<script>
+const ACTIVE_DATASET = "{{ active_ds }}";
+const CLASSES = {{ eval_data.classes|tojson }};
+const CLASS_COLORS = {{ eval_data.cfg.class_colors|tojson }};
+const CLASS_SYMBOLS = {{ eval_data.cfg.class_symbols|tojson }};
+const PRIORS = {{ eval_data.priors|tojson }};
+const PARAMS_1D = {{ eval_data.params_1d|tojson }};
+const PARAMS_2D = {
+  {% for c in eval_data.classes %}
+  "{{ c }}": {
+    "mean": {{ eval_data.params_2d[c].mean.tolist()|tojson }},
+    "cov": {{ eval_data.params_2d[c].cov.tolist()|tojson }}
+  }{% if not loop.last %},{% endif %}
+  {% endfor %}
+};
+
+let currentMode = "multi";
+let currentPriorMode = "empirical";
+
+// 1D Normal PDF
+function normPdf(x, mu, sigma) {
+  const coeff = 1.0 / (sigma * Math.sqrt(2 * Math.PI));
+  const exponent = -0.5 * Math.pow((x - mu) / sigma, 2);
+  return coeff * Math.exp(exponent);
+}
+
+// 2D Multivariate Normal PDF
+function mvnPdf2D(x1, x2, mean, cov) {
+  const dx1 = x1 - mean[0];
+  const dx2 = x2 - mean[1];
+  const det = cov[0][0] * cov[1][1] - cov[0][1] * cov[1][0];
+  if (det <= 0) return 0.00001;
+  const inv00 = cov[1][1] / det;
+  const inv01 = -cov[0][1] / det;
+  const inv10 = -cov[1][0] / det;
+  const inv11 = cov[0][0] / det;
+  const maha = (dx1 * (dx1 * inv00 + dx2 * inv10)) + (dx2 * (dx1 * inv01 + dx2 * inv11));
+  const denom = 2 * Math.PI * Math.sqrt(det);
+  return (1.0 / denom) * Math.exp(-0.5 * maha);
+}
+
+function updateInference() {
+  const x1 = parseFloat(document.getElementById("sliderX1").value);
+  const x2 = parseFloat(document.getElementById("sliderX2").value);
+  document.getElementById("valX1").textContent = x1.toFixed(2);
+  document.getElementById("valX2").textContent = x2.toFixed(2);
+
+  const priors = {};
+  CLASSES.forEach(c => {
+    priors[c] = (currentPriorMode === "equal") ? (1.0 / CLASSES.length) : PRIORS[c];
+  });
+
+  const likelihoods = {};
+  const joints = {};
+  CLASSES.forEach(c => {
+    let lh = 0;
+    if (currentMode === "single") {
+      lh = normPdf(x1, PARAMS_1D[c].mean, PARAMS_1D[c].std);
+    } else {
+      lh = mvnPdf2D(x1, x2, PARAMS_2D[c].mean, PARAMS_2D[c].cov);
+    }
+    likelihoods[c] = lh;
+    joints[c] = lh * priors[c];
+  });
+
+  let evidence = 0;
+  CLASSES.forEach(c => { evidence += joints[c]; });
+
+  const posteriors = {};
+  CLASSES.forEach(c => {
+    posteriors[c] = evidence > 0 ? (joints[c] / evidence) : (1.0 / CLASSES.length);
+  });
+
+  // MAP Winner
+  let bestCls = CLASSES[0];
+  CLASSES.forEach(c => {
+    if (posteriors[c] > posteriors[bestCls]) bestCls = c;
+  });
+
+  // Update DOM meters
+  CLASSES.forEach((c, idx) => {
+    const p = posteriors[c];
+    document.getElementById("meter_" + idx).style.width = (p * 100).toFixed(1) + "%";
+    document.getElementById("postVal_" + idx).textContent = (p * 100).toFixed(1) + "%";
+    document.getElementById("lhVal_" + idx).textContent = "p(x|" + c + ") Likelihood: " + likelihoods[c].toExponential(3);
+    document.getElementById("priorVal_" + idx).textContent = "Prior: " + (priors[c] * 100).toFixed(1) + "%";
+  });
+
+  document.getElementById("valEvidence").textContent = evidence.toExponential(4);
+
+  // Winner Banner
+  document.getElementById("mapSymbol").textContent = CLASS_SYMBOLS[bestCls];
+  document.getElementById("mapDecision").style.color = CLASS_COLORS[bestCls];
+  document.getElementById("mapConfidence").textContent = (posteriors[bestCls] * 100).toFixed(1) + "%";
+
+  // Analytical insight
+  let insightText = "";
+  if (currentMode === "single") {
+    insightText = "1D Single-Feature evaluation: Feature value x₁=" + x1.toFixed(2) + " yields predicted category " + bestCls + " with " + (posteriors[bestCls] * 100).toFixed(1) + "% posterior belief.";
+  } else {
+    insightText = "2D QDA evaluation: Coordinate [" + x1.toFixed(2) + ", " + x2.toFixed(2) + "] evaluated with full covariance matrices. MAP predicted category is " + bestCls + " with " + (posteriors[bestCls] * 100).toFixed(1) + "% posterior belief.";
+  }
+  document.getElementById("decisionInsight").textContent = insightText;
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll("#modeSelector .segmented-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-mode") === mode);
+  });
+  document.getElementById("groupX2").style.opacity = (mode === "single") ? "0.4" : "1.0";
+  document.getElementById("sliderX2").disabled = (mode === "single");
+  updateInference();
+}
+
+function setPriorMode(mode) {
+  currentPriorMode = mode;
+  document.querySelectorAll("#priorSelector .segmented-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-priors") === mode);
+  });
+  updateInference();
+}
+
+function loadPreset(x1, x2, mode) {
+  document.getElementById("sliderX1").value = x1;
+  document.getElementById("sliderX2").value = x2;
+  setMode(mode);
+}
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateInference();
+});
+</script>
+{% endblock %}

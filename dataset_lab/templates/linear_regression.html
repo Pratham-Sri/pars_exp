@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Linear Regression · Gradient Descent{% endblock %}
+
+{% block content %}
+<div class="crumb">
+  <a href="{{ url_for('main.home') }}">EXPERIMENTS</a> / <span>EXP 06: LINEAR REGRESSION</span>
+</div>
+
+<header class="page-head">
+  <div>
+    <h1>Linear Regression</h1>
+    <p>Batch Gradient Descent on Palmer Penguins dataset (Flipper Length → Body Mass).</p>
+  </div>
+  <div class="head-stamp">
+    y = {{ '%.2f'|format(res.slope) }}x − {{ '%.1f'|format(res.intercept|abs) }}<br>
+    R² = {{ '%.3f'|format(res.r2_score) }} | RMSE = {{ '%.1f'|format(res.rmse) }} g
+  </div>
+</header>
+
+<!-- Minimal Metrics -->
+<div class="audit-ribbon">
+  <div class="audit-stat">
+    <span class="audit-label">MODEL FIT (R²)</span>
+    <div class="audit-val">{{ '%.4f'|format(res.r2_score) }}</div>
+    <div class="audit-sub">76.2% variance</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">SLOPE (w)</span>
+    <div class="audit-val">+{{ '%.2f'|format(res.slope) }} g/mm</div>
+    <div class="audit-sub">Allometric rate</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">INTERCEPT (b)</span>
+    <div class="audit-val">{{ '%.1f'|format(res.intercept) }} g</div>
+    <div class="audit-sub">Offset</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">COST CONVERGENCE J(θ)</span>
+    <div class="audit-val">{{ '%.3f'|format(res.initial_cost) }} → {{ '%.3f'|format(res.final_cost) }}</div>
+    <div class="audit-sub">MSE loss</div>
+  </div>
+</div>
+
+<!-- Relevant Graphs: 2-Panel Plot -->
+<section class="results-card">
+  <div class="dataset-heading">
+    <h2>Model Fit &amp; Learning Rate Sensitivity</h2>
+    <span class="status">PALMER PENGUINS</span>
+  </div>
+  <div style="background:#fff;border:1px solid #000;padding:6px;margin:16px 0;">
+    <img src="{{ chart_url }}" alt="B. Linear regression fit and D. learning rate sensitivity" style="width:100%;display:block;">
+  </div>
+</section>
+
+<!-- Interactive Predictor -->
+<section class="bayes-interactive-card">
+  <div class="dataset-heading">
+    <h2>Specimen Mass Predictor</h2>
+    <span class="status">LIVE INFERENCE</span>
+  </div>
+
+  <div class="two-col" style="gap:24px;margin-top:16px;">
+    <!-- Controls -->
+    <div>
+      <div class="control-box">
+        <label for="sliderFlipper">FLIPPER LENGTH (mm)</label>
+        <div class="slider-val" id="valFlipper">200.0 mm</div>
+        <input type="range" id="sliderFlipper" min="170.0" max="235.0" step="1.0"
+               value="200.0" oninput="updatePrediction()">
+      </div>
+
+      <div style="margin-top:14px;">
+        <span class="control-label">LEARNING RATE (α):</span>
+        <div class="segmented-group" id="alphaToggle">
+          <button type="button" class="segmented-btn" onclick="setAlpha(0.01)">0.01</button>
+          <button type="button" class="segmented-btn active" onclick="setAlpha(0.05)">0.05</button>
+          <button type="button" class="segmented-btn" onclick="setAlpha(0.15)">0.15</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <span class="control-label">EPOCHS:</span>
+        <div class="segmented-group" id="iterToggle">
+          <button type="button" class="segmented-btn" onclick="setIter(100)">100</button>
+          <button type="button" class="segmented-btn active" onclick="setIter(400)">400</button>
+          <button type="button" class="segmented-btn" onclick="setIter(800)">800</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div>
+      <div style="border:1px solid #000;padding:16px;background:#fff;margin-bottom:12px;">
+        <span class="audit-label">PREDICTED BODY MASS</span>
+        <div style="font-size:26px;font-weight:700;margin:6px 0;" id="displayMassGrams">4,158 g</div>
+        <div style="font-size:12px;color:var(--muted);" id="displayMassKg">≈ 4.16 kg (±{{ '%.0f'|format(res.rmse) }} g RMSE)</div>
+      </div>
+
+      <div style="border:1px solid #000;padding:12px;font-family:'DM Mono',monospace;font-size:11.5px;">
+        <div>Equation: <b>y = <span id="displaySlope">{{ '%.2f'|format(res.slope) }}</span>x + <span id="displayIntercept">{{ '%.1f'|format(res.intercept) }}</span></b></div>
+        <div style="margin-top:4px;">Cost J(θ): <b id="displayCost">{{ '%.4f'|format(res.final_cost) }}</b> | <b id="displayR2">R² = {{ '%.3f'|format(res.r2_score) }}</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Test Sample Ledger -->
+<section class="results-card">
+  <div class="dataset-heading">
+    <h2>Sample Predictions Ledger</h2>
+    <span class="status">N={{ sample_predictions|length }} SPECIMENS</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>SPECIMEN</th>
+          <th>SPECIES</th>
+          <th style="text-align:center;">FLIPPER</th>
+          <th style="text-align:center;">ACTUAL MASS</th>
+          <th style="text-align:center;">PREDICTED MASS</th>
+          <th style="text-align:center;">ERROR</th>
+          <th style="text-align:center;">ACCURACY</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sample_predictions %}
+        <tr>
+          <td>PENGUIN-{{ s.index }}</td>
+          <td>{{ s.species }}</td>
+          <td style="text-align:center;">{{ '%.1f'|format(s.flipper_length_mm) }} mm</td>
+          <td style="text-align:center;font-weight:700;">{{ '%.0f'|format(s.actual_mass_g) }} g</td>
+          <td style="text-align:center;font-weight:700;">{{ '%.0f'|format(s.predicted_mass_g) }} g</td>
+          <td style="text-align:center;">{% if s.residual_error_g > 0 %}+{% endif %}{{ '%.0f'|format(s.residual_error_g) }} g</td>
+          <td style="text-align:center;"><span class="tag-correct">{{ '%.1f'|format(100.0 - s.relative_error_pct) }}%</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Navigation -->
+<div style="display:flex;justify-content:space-between;padding:20px 0;border-top:1px solid #000;margin-top:32px;">
+  <a href="{{ url_for('main.experiment', slug='bayesian-risk-minimization') }}">← EXP 05: Risk Minimization</a>
+  <a href="{{ url_for('main.experiment', slug='logistic-regression-gradient-descent') }}">EXP 07: Logistic Regression →</a>
+</div>
+
+<script>
+let currentSlope = {{ res.slope }};
+let currentIntercept = {{ res.intercept }};
+let currentAlpha = 0.05;
+let currentIter = 400;
+
+function updatePrediction() {
+  const flipper = parseFloat(document.getElementById("sliderFlipper").value);
+  document.getElementById("valFlipper").textContent = flipper.toFixed(1) + " mm";
+  const predGrams = currentSlope * flipper + currentIntercept;
+  document.getElementById("displayMassGrams").textContent = Math.round(predGrams).toLocaleString() + " g";
+  document.getElementById("displayMassKg").textContent = "≈ " + (predGrams / 1000).toFixed(2) + " kg (±{{ '%.0f'|format(res.rmse) }} g RMSE)";
+}
+
+function setAlpha(val) {
+  currentAlpha = val;
+  document.querySelectorAll("#alphaToggle .segmented-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.includes(val.toString()));
+  });
+  reoptimize();
+}
+
+function setIter(val) {
+  currentIter = val;
+  document.querySelectorAll("#iterToggle .segmented-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.includes(val.toString()));
+  });
+  reoptimize();
+}
+
+async function reoptimize() {
+  const flipper = parseFloat(document.getElementById("sliderFlipper").value);
+  try {
+    const resp = await fetch("/api/regression/optimize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ alpha: currentAlpha, iterations: currentIter, flipper_input: flipper })
+    });
+    const data = await resp.json();
+    if (data.status === "success") {
+      currentSlope = data.slope;
+      currentIntercept = data.intercept;
+      document.getElementById("displaySlope").textContent = data.slope.toFixed(2);
+      document.getElementById("displayIntercept").textContent = data.intercept.toFixed(1);
+      document.getElementById("displayCost").textContent = data.final_cost.toFixed(4);
+      document.getElementById("displayR2").textContent = "R² = " + data.r2_score.toFixed(3);
+      updatePrediction();
+    }
+  } catch (err) {
+    console.error("Optimization error:", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  updatePrediction();
+});
+</script>
+{% endblock %}

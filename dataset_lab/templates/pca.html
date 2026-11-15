@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Experiment 09 · PCA{% endblock %}
+{% block content %}
+<div class="pca-page">
+  <nav class="crumb"><a href="{{ url_for('main.home') }}">EXPERIMENTS</a><span>/</span> EXP 09 · PCA</nav>
+  <section class="pca-section">
+    <img class="pca-plot" src="{{ url_for('static', filename=analysis.chart_file) }}" alt="Reduced PC1 and PC2 test scores with PC1 to PC4 component dot product heatmap">
+  </section>
+  <section class="pca-section">
+    <div class="pca-results"><span>TEST RECORDS <b>{{ analysis.test_count }}</b></span><span>TRAIN PC1–PC2 VARIANCE <b>{{ '%.1f'|format(analysis.test_variance_pc12 * 100) }}%</b></span><span>TEST RECONSTRUCTION RMSE <b>{{ '%.4f'|format(analysis.test_reconstruction_rmse_pc12) }}</b></span></div>
+    <div class="pca-table-wrap"><table class="pca-table"><thead><tr><th>Record</th><th>Species</th><th>PC1</th><th>PC2</th><th>PC3</th><th>PC4</th></tr></thead><tbody>
+      {% for row in analysis.sample_projections %}<tr><td>{{ row.record }}</td><td>{{ row.species }}</td>{% for score in row.scores %}<td>{{ '%+.4f'|format(score) }}</td>{% endfor %}</tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <nav class="pca-nav"><a href="{{ url_for('main.home') }}">All experiments →</a></nav>
+</div>
+<style>
+.pca-page{max-width:1120px;margin:auto;padding:0 28px 70px}.pca-section{padding:30px 0;border-bottom:1px solid #dce3dc}.pca-plot{display:block;width:100%;height:auto;background:#fff;border:1px solid #e1e7e1;padding:10px}.pca-results{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}.pca-results span{padding:11px 14px;background:#f0f4ef;font:10px 'DM Mono',monospace;color:#64716a}.pca-results b{margin-left:8px;color:#164e3d;font-size:13px}.pca-table-wrap{overflow-x:auto}.pca-table{width:100%;border-collapse:collapse;background:#fff;font-size:12px}.pca-table th{text-align:left;font:10px 'DM Mono',monospace;color:#64716a;background:#f0f4ef;white-space:nowrap}.pca-table td,.pca-table th{padding:10px 12px;border-bottom:1px solid #e4e9e4}.pca-table td:not(:first-child){font-variant-numeric:tabular-nums}.pca-nav{display:flex;justify-content:flex-end;padding-top:24px}.pca-nav a{color:#164e3d;text-decoration:none;font-weight:600;font-size:13px}@media(max-width:720px){.pca-page{padding:0 17px 50px}}
+</style>
+{% endblock %}
+

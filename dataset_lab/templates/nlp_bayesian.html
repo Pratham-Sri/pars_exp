@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+{% block title %}Experiment 04 · Text NLP Pipeline & Bayesian Classification{% endblock %}
+
+{% block content %}
+<div class="crumb">
+  <a href="{{ url_for('main.home') }}">EXPERIMENTS</a> / <span>EXP 04: TEXT NLP &amp; BAYESIAN</span>
+</div>
+
+<header class="page-head">
+  <div>
+    <h1>Text NLP Pipeline</h1>
+    <p>Extraction, Sentence Splitting, Stopword Removal, Lemmatization &amp; Bayesian Inference.</p>
+  </div>
+  <div class="head-stamp">
+    TEST ACC: {{ '%.1f'|format(test_acc * 100) }}%<br>
+    3 DOMAINS
+  </div>
+</header>
+
+<!-- Minimalist Executive Summary -->
+<div class="audit-ribbon" style="margin-bottom:24px;">
+  <div class="audit-stat">
+    <span class="audit-label">PIPELINE STATUS</span>
+    <div class="audit-val"><span class="pulse-indicator"></span> ACTIVE</div>
+    <div class="audit-sub">NLTK Sentence Tokenizer &amp; Lemmatizer</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">TARGET CLASSES</span>
+    <div class="audit-val">3 DOMAINS</div>
+    <div class="audit-sub">Technology · Medical · Climate</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">TEST COHORT SIZE</span>
+    <div class="audit-val">{{ test_samples|length }} SAMPLES</div>
+    <div class="audit-sub">Held-out evaluation benchmark</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">BAYES TEST ACCURACY</span>
+    <div class="audit-val" style="color:var(--green);">{{ '%.1f'|format(test_acc * 100) }}%</div>
+    <div class="audit-sub">Laplace-smoothed Multinomial Naive Bayes</div>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- SECTION 1: Interactive Text Paragraph Extraction Box -->
+<!-- ======================================================================= -->
+<section class="nlp-step-card">
+  <div class="dataset-heading">
+    <h2>Input Paragraph</h2>
+    <span class="status">INTERACTIVE</span>
+  </div>
+
+  <form method="post" id="nlpForm">
+    <textarea class="nlp-textarea" name="text" id="inputText" rows="4" placeholder="Enter paragraph with multiple sentences here...">{{ sample_text }}</textarea>
+
+    <!-- Presets and Submit Button -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-top:14px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:600;color:var(--muted);align-self:center;margin-right:4px;">LOAD PRESETS:</span>
+        <button type="button" class="preset-tag" onclick="loadTextPreset('tech')">💻 Technology Paragraph</button>
+        <button type="button" class="preset-tag" onclick="loadTextPreset('med')">🏥 Medical Healthcare Paragraph</button>
+        <button type="button" class="preset-tag" onclick="loadTextPreset('climate')">🌍 Climate &amp; Earth Science Paragraph</button>
+      </div>
+      <button type="button" class="button" onclick="runLiveProcessing()">Process Pipeline &amp; Classify <span>→</span></button>
+    </div>
+  </form>
+</section>
+
+<!-- ======================================================================= -->
+<!-- SECTION 2: Pipeline Step-by-Step Results (Clean & Direct) -->
+<!-- ======================================================================= -->
+
+<!-- Step 1: Sentence Segmentation -->
+<section class="nlp-step-card" id="step1Card">
+  <h3><span class="nlp-step-num">1</span> Sentence Segmentation</h3>
+  <div id="sentenceList">
+    {% for s in nlp_result.sentences %}
+    <div class="sentence-item">
+      <b style="color:var(--green);font-family:'DM Mono',monospace;margin-right:6px;">Sentence {{ s.index }}:</b>
+      <span>{{ s.text }}</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace;">
+        Raw Tokens: {{ s.raw_tokens|length }} | Retained Content Words: {{ s.clean_tokens|length }} | Stop Words: {{ s.removed_stopwords|length }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Step 2: Stop Words Removal -->
+<section class="nlp-step-card" id="step2Card">
+  <h3><span class="nlp-step-num">2</span> Stop Words Removal</h3>
+
+  <div class="two-col" style="gap:20px;">
+    <div>
+      <h4 style="margin:0 0 8px;font-size:13px;color:#b91c1c;">Removed Stop Words (Filtered Out)</h4>
+      <div id="removedStopsBox" style="background:#f8fafc;border:1px solid #e2e8f0;padding:12px;border-radius:6px;min-height:70px;">
+        {% set all_stops = [] %}
+        {% for s in nlp_result.sentences %}
+          {% for w in s.removed_stopwords %}
+            <span class="stopword-chip">{{ w }}</span>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <h4 style="margin:0 0 8px;font-size:13px;color:var(--green);">Retained Informative Tokens</h4>
+      <div id="retainedTokensBox" style="background:#f8faf7;border:1px solid #dce5dc;padding:12px;border-radius:6px;min-height:70px;">
+        {% for s in nlp_result.sentences %}
+          {% for w in s.clean_tokens %}
+            <span class="token-chip">{{ w }}</span>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Step 3: Stemming vs Lemmatization Comparison Table -->
+<section class="nlp-step-card" id="step3Card">
+  <h3><span class="nlp-step-num">3</span> Stemming vs Lemmatization</h3>
+
+  <div style="overflow-x:auto;max-height:420px;overflow-y:auto;border:1px solid #e0e6df;border-radius:6px;">
+    <table class="data-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead style="position:sticky;top:0;background:#f1f5f0;z-index:2;">
+        <tr style="border-bottom:2px solid #cbd7ce;">
+          <th style="padding:9px 12px;text-align:left;font-family:'DM Mono',monospace;">#</th>
+          <th style="padding:9px 12px;text-align:left;font-family:'DM Mono',monospace;">ORIGINAL WORD TOKEN</th>
+          <th style="padding:9px 12px;text-align:left;font-family:'DM Mono',monospace;">PORTER STEM (RULE-STRIPPED)</th>
+          <th style="padding:9px 12px;text-align:left;font-family:'DM Mono',monospace;">WORDNET LEMMA (CANONICAL)</th>
+          <th style="padding:9px 12px;text-align:left;font-family:'DM Mono',monospace;">MORPHOLOGICAL COMPARISON</th>
+        </tr>
+      </thead>
+      <tbody id="comparisonTableBody">
+        {% set row_counter = namespace(val=1) %}
+        {% for s in nlp_result.sentences %}
+          {% for row in s.comparison_table %}
+          <tr style="border-bottom:1px solid #eef2ec;">
+            <td style="padding:7px 12px;font-family:'DM Mono',monospace;color:var(--muted);">{{ row_counter.val }}</td>
+            <td style="padding:7px 12px;font-weight:600;color:#1e293b;">{{ row.original }}</td>
+            <td style="padding:7px 12px;font-family:'DM Mono',monospace;color:#b45309;font-weight:600;">{{ row.stemmed }}</td>
+            <td style="padding:7px 12px;font-family:'DM Mono',monospace;color:var(--green);font-weight:700;">{{ row.lemmatized }}</td>
+            <td style="padding:7px 12px;color:#64748b;font-size:11.5px;">
+              {% if row.stemmed != row.lemmatized %}
+                <span style="color:#b45309;">Stem clipped suffix ({{ row.stemmed }} ≠ {{ row.lemmatized }})</span>
+              {% else %}
+                <span style="color:#15803d;">Identical root form ({{ row.lemmatized }})</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% set row_counter.val = row_counter.val + 1 %}
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Step 4: Bayesian Classification of the Input Text -->
+<section class="nlp-step-card" id="step4Card">
+  <h3><span class="nlp-step-num">4</span> Bayesian Classification</h3>
+
+  <!-- Prediction Banner -->
+  <div class="map-badge" id="bayesResultBadge" style="margin-bottom:16px;">
+    <div>
+      <div class="map-title">MAXIMUM A POSTERIORI (MAP) TOPIC PREDICTION</div>
+      <div class="map-decision" id="bayesWinnerName" style="color:{{ class_colors[bayes_result.predicted_class] }};">
+        {{ bayes_result.predicted_class }}
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;">POSTERIOR CONFIDENCE</div>
+      <div class="map-conf" id="bayesWinnerConf">{{ '%.1f'|format(bayes_result.confidence * 100) }}%</div>
+    </div>
+  </div>
+
+  <!-- Probability Meters -->
+  <div style="background:#f8faf7;border:1px solid #dce5dc;border-radius:6px;padding:18px;">
+    {% for c in classes %}
+    <div class="meter-row" style="margin-bottom:12px;">
+      <div class="meter-head">
+        <span style="color:{{ class_colors[c] }};">● Topic: {{ c }}</span>
+        <b id="postVal_{{ c }}">{{ '%.1f'|format(bayes_result.posteriors[c] * 100) }}%</b>
+      </div>
+      <div class="meter-track">
+        <div class="meter-fill" id="meter_{{ c }}" style="width: {{ '%.1f'|format(bayes_result.posteriors[c] * 100) }}%; background: {{ class_colors[c] }};"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ======================================================================= -->
+<!-- SECTION 3: Benchmark Test Samples Bayesian Evaluation Ledger -->
+<!-- ======================================================================= -->
+<section class="results-card">
+  <div class="dataset-heading">
+    <h2>Test Cohort (N={{ test_samples|length }})</h2>
+    <span class="status">ACC: {{ '%.1f'|format(test_acc * 100) }}%</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="background:#f1f5f0;border-bottom:2px solid #cbd7ce;">
+          <th style="padding:9px 10px;text-align:left;font-family:'DM Mono',monospace;">ID</th>
+          <th style="padding:9px 10px;text-align:left;font-family:'DM Mono',monospace;">TEST SENTENCE TEXT</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">TRUE LABEL</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">BAYES MAP PREDICTION</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">POSTERIORS [TECH, MED, CLIM]</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">CONFIDENCE</th>
+          <th style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;">STATUS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in test_samples %}
+        <tr style="border-bottom:1px solid #e5ede7;">
+          <td style="padding:8px 10px;font-family:'DM Mono',monospace;font-weight:700;color:var(--green);">
+            {{ t.id }}
+          </td>
+          <td style="padding:8px 10px;color:#1e293b;max-width:380px;">
+            {{ t.text }}
+          </td>
+          <td style="padding:8px 10px;text-align:center;font-weight:700;color:{{ class_colors[t.true_class] }};">
+            {{ t.true_class }}
+          </td>
+          <td style="padding:8px 10px;text-align:center;font-weight:700;color:{{ class_colors[t.pred_class] }};">
+            {{ t.pred_class }}
+          </td>
+          <td style="padding:8px 10px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:#475569;">
+            [{{ '%.2f'|format(t.posteriors.Technology) }}, {{ '%.2f'|format(t.posteriors.Medical) }}, {{ '%.2f'|format(t.posteriors.Climate) }}]
+          </td>
+          <td style="padding:8px 10px;text-align:center;font-family:'DM Mono',monospace;font-weight:700;">
+            {{ '%.1f'|format(t.confidence * 100) }}%
+          </td>
+          <td style="padding:8px 10px;text-align:center;">
+            {% if t.is_correct %}
+              <span class="tag-correct">CORRECT</span>
+            {% else %}
+              <span class="tag-wrong">BORDERLINE</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Navigation -->
+
+<!-- Workspace Navigation Links -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:24px 0;border-top:1px solid var(--line);margin-top:40px;flex-wrap:wrap;gap:12px;">
+  <a href="{{ url_for('main.experiment', slug='dataset-explorer') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 01: Retinal &amp; CNC Milling
+  </a>
+  <a href="{{ url_for('main.experiment', slug='multimodal-feature-extraction') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 02: Frank Ocean Multimodal Signals
+  </a>
+  <a href="{{ url_for('main.experiment', slug='bayesian-classification') }}" style="color:var(--green);text-decoration:none;font-weight:600;font-size:13.5px;">
+    ← EXP / 03: Bayesian Pattern Classification
+  </a>
+  <a href="{{ url_for('main.experiment', slug='bayesian-risk-minimization') }}" style="color:#b91c1c;text-decoration:none;font-weight:600;font-size:13.5px;">
+    NEXT: EXP / 05 Bayesian Risk Minimizer →
+  </a>
+  <a href="{{ url_for('main.home') }}" style="color:var(--muted);text-decoration:none;font-size:13.5px;">
+    Back to Home Overview →
+  </a>
+</div>
+
+<!-- ======================================================================= -->
+<!-- Client-Side JavaScript: Live Processing & Presets -->
+<!-- ======================================================================= -->
+<script>
+const PRESETS = {
+  tech: "Artificial intelligence systems deploy automated deep learning models across cloud GPU servers. Software engineers compile containerized microservices to optimize low-latency network databases. High-performance processors compute large tensor operations with precision.",
+  med: "Clinical physicians evaluate patient cardiovascular vital signs and administer antibiotic therapies. Diagnostic scans reveal macular microaneurysms and retinal edema in diabetic patients. Pharmaceutical treatments lower blood pressure and protect cardiac health.",
+  climate: "Atmospheric greenhouse emissions accelerate Arctic glacier melting and oceanic warming trends. Renewable solar arrays and wind power grids reduce global carbon pollution. Extreme drought weather patterns impact agricultural soil moisture and freshwater reserves."
+};
+
+const CLASS_COLORS = {{ class_colors|tojson }};
+
+function loadTextPreset(key) {
+  if (PRESETS[key]) {
+    document.getElementById("inputText").value = PRESETS[key];
+    runLiveProcessing();
+  }
+}
+
+async function runLiveProcessing() {
+  const text = document.getElementById("inputText").value.trim();
+  if (!text) return;
+
+  try {
+    const resp = await fetch("/api/nlp/process", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text })
+    });
+    const data = await resp.json();
+    if (data.status === "success") {
+      updateUIWithResults(data.nlp, data.classification);
+    }
+  } catch (err) {
+    console.error("NLP processing error:", err);
+  }
+}
+
+function updateUIWithResults(nlp, clf) {
+  // 1. Update Sentences
+  const sentenceList = document.getElementById("sentenceList");
+  let sHtml = "";
+  nlp.sentences.forEach(s => {
+    sHtml += `
+      <div class="sentence-item">
+        <b style="color:var(--green);font-family:'DM Mono',monospace;margin-right:6px;">Sentence ${s.index}:</b>
+        <span>${s.text}</span>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace;">
+          Raw Tokens: ${s.raw_tokens.length} | Retained Content Words: ${s.clean_tokens.length} | Stop Words: ${s.removed_stopwords.length}
+        </div>
+      </div>
+    `;
+  });
+  sentenceList.innerHTML = sHtml;
+
+  // 2. Update Removed Stop Words & Retained Tokens
+  const removedBox = document.getElementById("removedStopsBox");
+  const retainedBox = document.getElementById("retainedTokensBox");
+  let stopsHtml = "";
+  let cleanHtml = "";
+  nlp.sentences.forEach(s => {
+    s.removed_stopwords.forEach(w => {
+      stopsHtml += `<span class="stopword-chip">${w}</span> `;
+    });
+    s.clean_tokens.forEach(w => {
+      cleanHtml += `<span class="token-chip">${w}</span> `;
+    });
+  });
+  removedBox.innerHTML = stopsHtml || "<span style='color:var(--muted);font-size:12px;'>No stop words found</span>";
+  retainedBox.innerHTML = cleanHtml;
+
+  // 3. Update Comparison Table
+  const tableBody = document.getElementById("comparisonTableBody");
+  let tHtml = "";
+  let rowCount = 1;
+  nlp.sentences.forEach(s => {
+    s.comparison_table.forEach(r => {
+      const diffHtml = (r.stemmed !== r.lemmatized)
+        ? `<span style="color:#b45309;">Stem clipped suffix (${r.stemmed} ≠ ${r.lemmatized})</span>`
+        : `<span style="color:#15803d;">Identical root form (${r.lemmatized})</span>`;
+      tHtml += `
+        <tr style="border-bottom:1px solid #eef2ec;">
+          <td style="padding:7px 12px;font-family:'DM Mono',monospace;color:var(--muted);">${rowCount}</td>
+          <td style="padding:7px 12px;font-weight:600;color:#1e293b;">${r.original}</td>
+          <td style="padding:7px 12px;font-family:'DM Mono',monospace;color:#b45309;font-weight:600;">${r.stemmed}</td>
+          <td style="padding:7px 12px;font-family:'DM Mono',monospace;color:var(--green);font-weight:700;">${r.lemmatized}</td>
+          <td style="padding:7px 12px;color:#64748b;font-size:11.5px;">${diffHtml}</td>
+        </tr>
+      `;
+      rowCount++;
+    });
+  });
+  tableBody.innerHTML = tHtml;
+
+  // 4. Update Bayesian Winner Banner & Meters
+  const winner = clf.predicted_class;
+  const conf = (clf.confidence * 100).toFixed(1);
+  const color = CLASS_COLORS[winner] || "#164e3d";
+
+  document.getElementById("bayesWinnerName").textContent = winner;
+  document.getElementById("bayesWinnerName").style.color = color;
+  document.getElementById("bayesWinnerConf").textContent = conf + "%";
+
+  ["Technology", "Medical", "Climate"].forEach(c => {
+    const p = (clf.posteriors[c] * 100).toFixed(1);
+    const meterEl = document.getElementById("meter_" + c);
+    const valEl = document.getElementById("postVal_" + c);
+    if (meterEl && valEl) {
+      meterEl.style.width = p + "%";
+      valEl.textContent = p + "%";
+    }
+  });
+}
+
+</script>
+{% endblock %}

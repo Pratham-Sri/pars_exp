@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Experiment 02 · Song Features{% endblock %}
+{% block content %}
+{% if timeline %}<div class="song-max-table-wrap timeline-wrap">
+  <table class="song-max-table">
+    <thead><tr><th>Sample</th><th>Start</th><th>End</th><th>Duration</th></tr></thead>
+    <tbody>
+      {% for entry in timeline %}
+      <tr><th scope="row">{{ entry.sample }}</th><td>{{ entry.start }}</td><td>{{ entry.end }}</td><td>{{ entry.duration }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>{% endif %}
+<div class="song-max-plots">
+  {% for chart in charts %}<img src="{{ chart }}" alt="Maximum song feature by track">{% endfor %}
+</div>
+{% if samples %}<div class="song-max-table-wrap">
+  <table class="song-max-table">
+    <thead><tr><th>Sample</th><th>Max spectral centroid (Hz)</th><th>Max RMS (dBFS)</th><th>Max zero-crossing rate</th></tr></thead>
+    <tbody>
+      {% for sample in samples %}
+      <tr>
+        <th scope="row">{{ sample.name }}</th>
+        <td>{{ "%.2f"|format(sample.spectral_centroid_hz) }}</td>
+        <td>{{ "%.2f"|format(sample.rms_dbfs) }}</td>
+        <td>{{ "%.4f"|format(sample.zero_crossing_rate) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="sample-max-total">
+        <th scope="row">Max across samples</th>
+        <td>{{ "%.2f"|format(samples|map(attribute="spectral_centroid_hz")|max) }}</td>
+        <td>{{ "%.2f"|format(samples|map(attribute="rms_dbfs")|max) }}</td>
+        <td>{{ "%.4f"|format(samples|map(attribute="zero_crossing_rate")|max) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>{% endif %}
+<style>
+.song-max-plots{max-width:1120px;margin:0 auto;padding:18px 28px 24px;display:grid;gap:18px}.song-max-plots img{display:block;width:100%;height:auto;background:#fff;border:1px solid #e1e7e1;padding:8px}.song-max-table-wrap{max-width:1120px;margin:0 auto;padding:0 28px 24px;overflow-x:auto}.timeline-wrap{padding-top:18px}.song-max-table{width:100%;border-collapse:collapse;background:#fff;font-variant-numeric:tabular-nums}.song-max-table th,.song-max-table td{padding:11px 14px;border-bottom:1px solid #e1e7e1;text-align:right;white-space:nowrap}.song-max-table thead th{background:#f3f5f2;font-weight:700}.song-max-table th:first-child,.song-max-table td:first-child{text-align:left}.song-max-table tfoot{font-weight:800;background:#edf2ed}.sample-max-total th,.sample-max-total td{border-top:2px solid #617263}@media(max-width:720px){.song-max-plots{padding:12px 17px 18px}.song-max-table-wrap{padding:0 17px 18px}.timeline-wrap{padding-top:12px}}
+</style>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Experiment 10 · LDA{% endblock %}
+{% block content %}
+<div class="lda-page">
+  <nav class="crumb"><a href="{{ url_for('main.home') }}">EXPERIMENTS</a><span>/</span> EXP 10 · LDA</nav>
+  <section class="lda-section">
+    <img class="lda-plot" src="{{ url_for('static', filename=analysis.chart_file) }}" alt="Palmer Penguins test and training records projected on LD1 and LD2, including the LD1 reduced-feature line">
+  </section>
+  <section class="lda-section">
+    <div class="lda-summary"><span>TRAIN <b>{{ analysis.train_count }}</b></span><span>TEST <b>{{ analysis.test_count }}</b></span><span>TEST ACCURACY <b>{{ '%.2f'|format(analysis.accuracy * 100) }}%</b></span></div>
+    <div class="lda-table-wrap"><table class="lda-table"><thead><tr><th>Actual</th>{% for label in analysis.species %}<th>{{ label }}</th>{% endfor %}</tr></thead><tbody>
+      {% for i in range(analysis.species|length) %}<tr><th>{{ analysis.species[i] }}</th>{% for j in range(analysis.species|length) %}<td>{{ analysis.confusion[i][j] }}</td>{% endfor %}</tr>{% endfor %}
+    </tbody></table></div>
+    <div class="lda-table-wrap lda-ledger"><table class="lda-table"><thead><tr><th>Record</th><th>Actual species</th><th>Predicted species</th><th>LD1</th><th>LD2</th><th>Result</th></tr></thead><tbody>
+      {% for row in analysis.test_rows %}<tr><td>{{ row.record }}</td><td>{{ row.actual }}</td><td>{{ row.predicted }}</td><td>{{ '%+.4f'|format(row.ld1) }}</td><td>{{ '%+.4f'|format(row.ld2) }}</td><td>{{ '✓' if row.actual == row.predicted else '×' }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <nav class="lda-nav"><a href="{{ url_for('main.experiment', slug='principal-component-analysis') }}">← EXP 09: PCA</a><a href="{{ url_for('main.home') }}">All experiments →</a></nav>
+</div>
+<style>
+.lda-page{max-width:1120px;margin:auto;padding:0 28px 70px}.lda-section{padding:30px 0;border-bottom:1px solid #dce3dc}.lda-plot{display:block;width:100%;height:auto;background:#fff;border:1px solid #e1e7e1;padding:10px}.lda-summary{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}.lda-summary span{padding:11px 14px;background:#f0f4ef;font:10px 'DM Mono',monospace;color:#64716a}.lda-summary b{margin-left:8px;color:#164e3d;font-size:13px}.lda-table-wrap{overflow-x:auto;margin:14px 0}.lda-table{width:100%;border-collapse:collapse;background:#fff;font-size:12px}.lda-table th{text-align:left;font:10px 'DM Mono',monospace;color:#64716a;background:#f0f4ef;white-space:nowrap}.lda-table td,.lda-table th{padding:10px 12px;border-bottom:1px solid #e4e9e4}.lda-table td:nth-child(n+4){font-variant-numeric:tabular-nums}.lda-nav{display:flex;justify-content:flex-end;padding-top:24px}.lda-nav a{color:#164e3d;text-decoration:none;font-weight:600;font-size:13px}@media(max-width:720px){.lda-page{padding:0 17px 50px}}
+</style>
+{% endblock %}

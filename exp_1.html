@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Experiment 2</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+	<p><a href="/">&larr; Home</a></p>
+	<h1>Experiment 2: Dataset extraction, performance plot and features</h1>
+	<p>The two datasets are loaded, stored as csv files in the <b>data</b> folder, and then a few classifiers
+	are tested on them. Features of each dataset are described below.</p>
+ 
+	{% for name, d in datasets.items() %}
+	<h2>Dataset: {{ name }}</h2>
+	<p>{{ d.info }}</p>
+	<table>
+        <tr><th>Samples</th><td>{{ d.samples }}</td></tr>
+        <tr><th>Features</th><td>{{ d.n_features }}</td></tr>
+        <tr><th>Classes</th><td>{{ d.classes | join(", ") }}</td></tr>
+    	<tr><th>Samples per class</th><td>{% for c, n in d.class_counts.items() %}{{ c }}: {{ n }}{% if not loop.last %}, {% endif %}{% endfor %}</td></tr>
+    	<tr><th>Stored in</th><td>{{ d.file }}</td></tr>
+	</table>
+ 
+	<h3>First 5 rows</h3>
+	<div style="overflow-x:auto">
+	<table class="small">
+    	<tr>{% for c in d.columns %}<th>{{ c }}</th>{% endfor %}</tr>
+    	{% for row in d.head %}
+    	<tr>{% for v in row %}<td>{{ v }}</td>{% endfor %}</tr>
+    	{% endfor %}
+	</table>
+	</div>
+ 
+	<h3>Features and their description</h3>
+	<table class="small">
+        <tr><th>Feature</th><th>Description</th><th>Min</th><th>Max</th><th>Mean</th><th>Std</th></tr>
+    	{% for f in d.features %}
+    	<tr><td>{{ f.name }}</td><td>{{ f.description }}</td><td>{{ f.min }}</td><td>{{ f.max }}</td><td>{{ f.mean }}</td><td>{{ f.std }}</td></tr>
+    	{% endfor %}
+	</table>
+	{% endfor %}
+ 
+	<h2>Performance</h2>
+	<p>Each dataset is split into 70% training and 30% testing data. The accuracy on the test data is shown below.</p>
+	<table>
+        <tr><th>Dataset</th>{% for m in model_names %}<th>{{ m }}</th>{% endfor %}</tr>
+    	{% for name, accs in accuracy.items() %}
+    	<tr><td>{{ name }}</td>{% for m in model_names %}<td>{{ accs[m] }} %</td>{% endfor %}</tr>
+    	{% endfor %}
+	</table>
+	<img src="data:image/png;base64,{{ plot }}" alt="performance plot">
+</body>
+</html>

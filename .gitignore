@@ -1,0 +1,9 @@
+.venv/
+**/__pycache__/
+*.py[cod]
+uploads/
+data/frank_ocean_corpus/
+data/recommender/*.sqlite3
+dataset_lab/static/media/
+.pytest_cache/
+*.log

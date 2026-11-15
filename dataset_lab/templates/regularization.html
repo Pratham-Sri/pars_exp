@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Experiment 08 · Regularization{% endblock %}
+{% block content %}
+<div class="reg-page">
+  <nav class="crumb"><a href="{{ url_for('main.home') }}">EXPERIMENTS</a><span>/</span> EXP 08 · REGULARIZATION</nav>
+  <section class="reg-section">
+    <div class="reg-section-head"><div><div class="eyebrow">01 / CLASSIFICATION</div><h2>Decision boundaries</h2></div></div>
+    <figure class="reg-figure"><img src="{{ url_for('static', filename=analysis.boundary_file) }}" alt="Palmer Penguins decision boundaries before and after L2 regularization"></figure>
+  </section>
+
+  <section class="reg-section">
+    <div class="reg-section-head"><div><div class="eyebrow">02 / RESULTS</div><h2>Before and after L2</h2></div></div>
+    <div class="reg-takeaway"><div><span>TEST ACCURACY CHANGE</span><b>{{ '%+.2f'|format(analysis.test_accuracy_change_pp) }} pp</b></div><div><span>TEST MACRO-F1 CHANGE</span><b>{{ '%+.2f'|format(analysis.test_macro_f1_change_pp) }} pp</b></div><div><span>ACCURACY GAP REDUCTION</span><b>{{ '%+.2f'|format(analysis.accuracy_gap_reduction_pp) }} pp</b></div></div>
+    <figure class="reg-figure"><img src="{{ url_for('static', filename=analysis.performance_file) }}" alt="Training and test accuracy, macro F1, and log loss before and after L2 regularization"></figure>
+    <div class="reg-table-wrap"><table class="reg-table"><thead><tr><th>Model</th><th>Train accuracy</th><th>Test accuracy</th><th>Accuracy gap</th><th>Train macro-F1</th><th>Test macro-F1</th><th>Test log loss</th></tr></thead><tbody>
+    {% for model in analysis.models %}<tr><td>{{ model.label }}</td><td>{{ '%.3f'|format(model.train.accuracy) }}</td><td>{{ '%.3f'|format(model.test.accuracy) }}</td><td>{{ '%+.3f'|format(model.accuracy_gap) }}</td><td>{{ '%.3f'|format(model.train.macro_f1) }}</td><td>{{ '%.3f'|format(model.test.macro_f1) }}</td><td>{{ '%.3f'|format(model.test.log_loss) }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  <section class="reg-section split-section">
+    <div><div class="eyebrow">03 / DATA SPLIT</div><h2>Stratified holdout</h2></div>
+    <div class="reg-table-wrap"><table class="reg-table"><thead><tr><th>Species</th><th>Train</th><th>Test</th></tr></thead><tbody>{% for species,counts in analysis.split_counts.items() %}<tr><td>{{ species }}</td><td>{{ counts.train }}</td><td>{{ counts.test }}</td></tr>{% endfor %}<tr class="total-row"><td>Total</td><td>{{ analysis.train_count }}</td><td>{{ analysis.test_count }}</td></tr></tbody></table></div>
+  </section>
+
+  <nav class="reg-nav"><a href="{{ url_for('main.experiment', slug='logistic-regression-gradient-descent') }}">← EXP 07: Logistic Regression</a><a href="{{ url_for('main.home') }}">All experiments →</a></nav>
+</div>
+<style>
+.reg-page{max-width:1120px;margin:auto;padding:0 28px 70px}.reg-hero{padding:28px 0 48px;border-bottom:1px solid #dce3dc}.reg-hero h1{font-size:clamp(44px,7vw,76px);line-height:.97;letter-spacing:-.055em;margin:18px 0}.reg-hero h1 em{font-family:'Playfair Display',Georgia,serif;color:#164e3d}.reg-hero>p{max-width:700px;color:#626e66;line-height:1.7;font-size:15px}.reg-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.reg-meta span{font:10px 'DM Mono',monospace;letter-spacing:.07em;padding:8px 10px;background:#eef3ed;color:#355442}.reg-section{padding:38px 0;border-bottom:1px solid #dce3dc}.reg-section-head{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:18px}.reg-section-head h2,.split-section h2{font-size:30px;letter-spacing:-.04em;margin:8px 0 0}.reg-section-head>p{max-width:450px;color:#6c766f;font-size:13px;line-height:1.6;margin:0}.reg-figure{margin:0;background:white;border:1px solid #e1e7e1;padding:12px}.reg-figure img{width:100%;height:auto;display:block}.reg-figure figcaption{padding:10px 4px 2px;color:#6e7972;font-size:11px;line-height:1.5}.reg-takeaway{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.reg-takeaway>div{padding:15px;background:#f0f4ef}.reg-takeaway span{display:block;font:9px 'DM Mono',monospace;letter-spacing:.08em;color:#6c766f}.reg-takeaway b{display:block;font-size:22px;margin-top:8px;color:#164e3d;font-variant-numeric:tabular-nums}.reg-table-wrap{overflow-x:auto;margin-top:20px}.reg-table{width:100%;border-collapse:collapse;background:#fff;font-size:12px}.reg-table th{text-align:left;font:10px 'DM Mono',monospace;color:#64716a;background:#f0f4ef;white-space:nowrap}.reg-table td,.reg-table th{padding:12px 13px;border-bottom:1px solid #e4e9e4}.reg-table td:not(:first-child){font-variant-numeric:tabular-nums}.total-row{font-weight:700;background:#f8faf7}.split-section{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center}.reg-copy{color:#68736c;font-size:13px;line-height:1.7;max-width:520px}.split-section .reg-table-wrap{margin:0}.reg-reading{margin:30px 0;background:#f0f4ef;border-left:3px solid #51745d;padding:18px 21px}.reg-reading p{color:#57635b;font-size:13px;line-height:1.75;margin:9px 0 0}.reg-nav{display:flex;justify-content:space-between;padding-top:24px}.reg-nav a{color:#164e3d;text-decoration:none;font-weight:600;font-size:13px}@media(max-width:720px){.reg-page{padding:0 17px 50px}.reg-section-head{display:block}.reg-section-head>p{margin-top:12px}.reg-takeaway{grid-template-columns:1fr}.split-section{grid-template-columns:1fr;gap:10px}.reg-hero{padding-top:18px}.reg-table{min-width:700px}}
+</style>
+{% endblock %}

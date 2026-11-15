@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ experiment.title }}{% endblock %}
+{% block content %}
+<div class="feature-page">
+  <nav class="crumb"><a href="{{ url_for('main.home') }}">EXPERIMENTS</a><span>/</span> EXP 01 · FEATURES</nav>
+  {% for key, d in datasets.items() %}
+  <section class="feature-dataset">
+    <div class="eyebrow">{{ d.domain }}</div>
+    <h1>{{ d.name }}</h1>
+    <div class="feature-grid">
+      {% for feature, description in d.features.items() %}
+      <article class="feature-item"><h2>{{ feature }}</h2><p>{{ description }}</p></article>
+      {% endfor %}
+    </div>
+    {% if d.eda_stats %}
+    <div class="analytics-block">
+      <div class="eyebrow">ILLUSTRATIVE ANALYTICS</div>
+      <div class="table-wrap"><table class="analytics-table"><thead><tr>{% for column in d.eda_stats[0].keys() %}<th>{{ column }}</th>{% endfor %}</tr></thead><tbody>
+        {% for row in d.eda_stats %}<tr>{% for value in row.values() %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+    {% endif %}
+    {% if d.cross_tab %}
+    <div class="analytics-block">
+      <div class="eyebrow">CLASS CROSS-TAB · ILLUSTRATIVE VALUES</div>
+      <div class="table-wrap"><table class="analytics-table"><thead><tr>{% for column in d.cross_tab[0].keys() %}<th>{{ column }}</th>{% endfor %}</tr></thead><tbody>
+        {% for row in d.cross_tab %}<tr>{% for value in row.values() %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+    {% endif %}
+    {% if d.wear_stages %}
+    <div class="analytics-block">
+      <div class="eyebrow">WEAR STAGES · ILLUSTRATIVE VALUES</div>
+      <div class="table-wrap"><table class="analytics-table"><thead><tr>{% for column in d.wear_stages[0].keys() %}<th>{{ column }}</th>{% endfor %}</tr></thead><tbody>
+        {% for row in d.wear_stages %}<tr>{% for value in row.values() %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+    {% endif %}
+  </section>
+  {% endfor %}
+  {% if chart_url %}
+  <section class="analytics-chart">
+    <div class="eyebrow">ILLUSTRATIVE MODEL METRICS</div>
+    <img src="{{ chart_url }}" alt="Illustrative model metric comparison for IDRiD and PHM 2010">
+  </section>
+  {% endif %}
+  <nav class="feature-nav"><a href="{{ url_for('main.home') }}">All experiments →</a></nav>
+</div>
+<style>
+.feature-page{max-width:1120px;margin:auto;padding:0 28px 70px}.feature-dataset{padding:28px 0 36px;border-bottom:1px solid #dce3dc}.feature-dataset h1{font-size:clamp(32px,5vw,48px);letter-spacing:-.045em;margin:8px 0 22px}.feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.feature-item{padding:17px 19px;background:#f5f7f3;border:1px solid #e3e9e2}.feature-item h2{font-size:16px;margin:0 0 7px;color:#164e3d}.feature-item p{font-size:13px;line-height:1.55;color:#64716a;margin:0}.analytics-block{margin-top:28px}.analytics-block>.eyebrow,.analytics-chart>.eyebrow{margin-bottom:12px}.table-wrap{overflow-x:auto}.analytics-table{width:100%;border-collapse:collapse;background:#fff;font-size:11px}.analytics-table th{text-align:left;font:9px 'DM Mono',monospace;color:#64716a;background:#f0f4ef;white-space:nowrap}.analytics-table td,.analytics-table th{padding:9px 10px;border-bottom:1px solid #e4e9e4}.analytics-chart{padding:28px 0;border-bottom:1px solid #dce3dc}.analytics-chart img{display:block;width:100%;height:auto;background:#fff;border:1px solid #e1e7e1;padding:10px}.feature-nav{display:flex;justify-content:flex-end;padding-top:24px}.feature-nav a{color:#164e3d;text-decoration:none;font-weight:600;font-size:13px}@media(max-width:720px){.feature-page{padding:0 17px 50px}.feature-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}

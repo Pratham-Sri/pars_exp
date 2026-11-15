@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Music Recommender Systems{% endblock %}
+{% block content %}
+<section class="section-head recommender-head">
+  <div><a class="crumb" href="{{ url_for('main.home') }}">EXPERIMENTS</a><h1>Music Recommender Systems</h1><p>{{ catalog_count }} Jamendo tracks · nine methods</p><nav class="hub-actions"><a href="{{ url_for('main.recommender_library') }}">SONG LIBRARY →</a><a href="{{ url_for('main.recommender_history') }}">RATINGS & HISTORY →</a></nav></div>
+  <a class="count" href="{{ source_url }}" target="_blank" rel="noopener">MTG-JAMENDO ↗</a>
+</section>
+<nav class="recommender-grid">
+  {% for method in methods %}
+  <a class="recommender-card" href="{{ url_for('main.recommender_method', method=method.slug) }}">
+    <span class="recommender-index">{{ '%02d'|format(loop.index) }}</span>
+    <h2>{{ method.title }}</h2>
+    <p>{{ method.detail }}</p>
+    <span class="recommender-open">OPEN →</span>
+  </a>
+  {% endfor %}
+</nav>
+<section class="interaction-source">
+  <div><span class="recommender-index">ADDITIONAL INTERACTION DATA</span><h2>Last.fm listening history</h2>
+    {% if interaction_archive_present %}<p>Last.fm files are present as an additional source; their tracks are separate from the playable Jamendo catalog until an explicit ID mapping is available.</p>
+    {% elif interaction_metadata_present %}<p>The JSON file is Zenodo record metadata, not the listening rows. Last.fm 1K provides user, timestamp, artist, and track history; Last.fm 360K provides user–artist play counts. The archives or extracted TSV rows are not in the project yet.</p>
+    {% else %}<p>Last.fm 1K track history or 360K artist play counts can be added alongside Jamendo; these interaction records do not include playable audio.</p>{% endif %}
+  </div>
+  <a href="{{ interaction_source_url }}" target="_blank" rel="noopener">ZENODO RECORD ↗</a>
+</section>
+<style>
+.recommender-head{max-width:1200px;margin:34px auto 22px;padding:0 28px;align-items:end}.recommender-head h1{font-size:clamp(28px,4vw,42px);margin:8px 0}.recommender-head p{margin:0;color:#555}.hub-actions{display:flex;gap:15px;margin-top:14px;font-size:11px;font-weight:700}.recommender-grid{max-width:1200px;margin:0 auto;padding:0 28px 30px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.recommender-card{min-height:180px;padding:20px;border:1.5px solid #111;text-decoration:none!important;display:flex;flex-direction:column;align-items:flex-start}.recommender-card:hover{background:#f4f4f4!important;color:#111!important}.recommender-index,.recommender-open{font-size:11px;letter-spacing:.08em;font-weight:700}.recommender-card h2{font-size:18px;margin:18px 0 7px}.recommender-card p{color:#444;margin:0 0 20px}.recommender-open{margin-top:auto}.interaction-source{max-width:1144px;margin:0 auto 58px;padding:18px 20px;border:1px solid #999;display:flex;align-items:center;justify-content:space-between;gap:20px}.interaction-source h2{margin:6px 0;font-size:18px}.interaction-source p{margin:0;color:#444;max-width:780px}.interaction-source>a{white-space:nowrap;font-size:11px;font-weight:700}@media(max-width:850px){.recommender-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.interaction-source{margin:0 28px 40px;align-items:flex-start;flex-direction:column}}@media(max-width:580px){.recommender-grid{grid-template-columns:1fr;padding:0 17px 25px}.recommender-head{padding:0 17px}.interaction-source{margin:0 17px 40px}}
+</style>
+{% endblock %}

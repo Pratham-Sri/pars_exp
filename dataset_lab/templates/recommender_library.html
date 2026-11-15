@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Song Library · Music Recommenders{% endblock %}
+{% block content %}
+<section class="library-head">
+  <a class="crumb" href="{{ url_for('main.experiment', slug='recommender-systems') }}">← RECOMMENDER SYSTEMS</a>
+  <h1>Song Library</h1>
+  <p>Open a track on Jamendo. After listening, return here to log the play and optionally rate it.</p>
+  <nav><a href="{{ url_for('main.experiment', slug='recommender-systems') }}">All recommenders</a><a href="{{ url_for('main.recommender_history', user_id=user_id) }}">My ratings & history</a></nav>
+</section>
+<form class="library-filter" method="get">
+  <label>Listener profile<input name="user_id" value="{{ user_id }}" maxlength="48"></label>
+  <label>Search songs<input name="q" value="{{ query }}" placeholder="Title, artist, tag"></label>
+  <button type="submit">Find tracks</button>
+</form>
+<section class="library-grid">
+  {% for track in catalog %}
+  <article class="library-card">
+    <span class="library-id">{{ track.track_id }} · {{ track.duration|int }} sec</span>
+    <h2>{{ track.title }}</h2><p>{{ track.artist }}{% if track.album %} · {{ track.album }}{% endif %}</p>
+    <div class="library-tags">{% for tag in track.tags[:5] %}<span>{{ tag.split('---')[-1] }}</span>{% endfor %}</div>
+    <a class="jamendo-link" href="{{ url_for('main.recommender_listen', track_id=track.track_id, user_id=user_id) }}" target="_blank" rel="noopener">OPEN TRACK ON JAMENDO ↗</a>
+    <form class="listen-log" method="post">
+      <input type="hidden" name="track_id" value="{{ track.track_id }}"><input type="hidden" name="q" value="{{ query }}">
+      <label>Profile<input name="user_id" value="{{ user_id }}" maxlength="48" required></label>
+      <label>Rating{% if track.track_id in ratings %}<small>Current: {{ '%.1f'|format(ratings[track.track_id]) }}</small>{% endif %}<select name="rating"><option value="">No rating</option>{% for value in [5,4,3,2,1] %}<option value="{{ value }}" {% if ratings.get(track.track_id) == value %}selected{% endif %}>{{ value }} / 5</option>{% endfor %}</select></label>
+      <button type="submit">I listened · Save</button>
+    </form>
+  </article>
+  {% else %}<p class="empty-library">No tracks match that search.</p>{% endfor %}
+</section>
+<style>
+.library-head,.library-filter,.library-grid{max-width:1200px;margin-left:auto;margin-right:auto;padding-left:28px;padding-right:28px}.library-head{padding-top:28px;padding-bottom:12px}.library-head h1{margin:10px 0 6px}.library-head p{color:#444;margin-bottom:12px}.library-head nav{display:flex;gap:16px;font-size:11px;font-weight:700}.library-filter{display:flex;align-items:end;gap:10px;padding-top:14px;padding-bottom:18px}.library-filter label,.listen-log label{display:grid;gap:4px;font-size:11px;font-weight:700}.library-filter input,.listen-log input,.listen-log select{font:inherit;padding:8px;border:1px solid #888;background:#fff}.library-filter button,.listen-log button{font:inherit;padding:9px 12px;background:#111;color:#fff;border:1px solid #111;cursor:pointer}.library-filter button:hover,.listen-log button:hover{background:#fff;color:#111}.library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;padding-bottom:55px}.library-card{border:1px solid #aaa;padding:14px;min-width:0}.library-id{font-size:10px;color:#555}.library-card h2{font-size:17px;margin:7px 0 3px;overflow-wrap:anywhere}.library-card p{margin:0 0 8px;color:#444}.library-tags{min-height:24px;display:flex;gap:4px;flex-wrap:wrap}.library-tags span{font-size:10px;background:#eee;padding:2px 5px}.jamendo-link{display:inline-block;font-size:11px;font-weight:700;margin:8px 0}.listen-log{border-top:1px solid #ddd;padding-top:9px;display:flex;align-items:end;gap:6px;flex-wrap:wrap}.listen-log input{width:115px;min-width:0;padding:6px}.listen-log select{padding:6px}.listen-log small{font-size:9px;color:#555;font-weight:400}.listen-log button{padding:7px 9px;font-size:11px}.empty-library{grid-column:1/-1}@media(max-width:850px){.library-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:580px){.library-head,.library-filter,.library-grid{padding-left:17px;padding-right:17px}.library-filter{flex-wrap:wrap}.library-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}

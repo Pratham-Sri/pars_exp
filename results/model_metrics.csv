@@ -1,0 +1,25 @@
+dataset,model,metric,value,split,notes
+IDRiD,EfficientNet-B4,QWK,0.884,5-fold stratified,Quadratic Weighted Kappa on 5-stage DR grading
+IDRiD,Swin-Transformer,QWK,0.876,5-fold stratified,Quadratic Weighted Kappa on 5-stage DR grading
+IDRiD,DenseNet-121,QWK,0.864,5-fold stratified,Quadratic Weighted Kappa on 5-stage DR grading
+IDRiD,ResNet-50,QWK,0.832,5-fold stratified,Quadratic Weighted Kappa on 5-stage DR grading
+IDRiD,EfficientNet-B4,Macro-F1,0.838,5-fold stratified,Macro-averaged F1 across ordinal classes
+IDRiD,Swin-Transformer,Macro-F1,0.829,5-fold stratified,Macro-averaged F1 across ordinal classes
+IDRiD,DenseNet-121,Macro-F1,0.812,5-fold stratified,Macro-averaged F1 across ordinal classes
+IDRiD,ResNet-50,Macro-F1,0.785,5-fold stratified,Macro-averaged F1 across ordinal classes
+IDRiD,EfficientNet-B4,ROC-AUC,0.952,5-fold stratified,One-vs-Rest Multiclass AUC
+IDRiD,Swin-Transformer,ROC-AUC,0.947,5-fold stratified,One-vs-Rest Multiclass AUC
+IDRiD,DenseNet-121,ROC-AUC,0.938,5-fold stratified,One-vs-Rest Multiclass AUC
+IDRiD,ResNet-50,ROC-AUC,0.918,5-fold stratified,One-vs-Rest Multiclass AUC
+PHM 2010,TCN,RMSE,6.42,cutter-held-out (c4),Temporal Convolutional Network wear prediction (μm)
+PHM 2010,1D-CNN + BiLSTM,RMSE,6.84,cutter-held-out (c4),Multi-sensor fusion architecture (μm)
+PHM 2010,XGBoost,RMSE,8.16,cutter-held-out (c4),Gradient boosted statistical moments (μm)
+PHM 2010,Random Forest,RMSE,9.42,cutter-held-out (c4),Ensemble baseline with 500 estimators (μm)
+PHM 2010,TCN,MAE,4.88,cutter-held-out (c4),Mean Absolute Error in flank wear (μm)
+PHM 2010,1D-CNN + BiLSTM,MAE,5.12,cutter-held-out (c4),Mean Absolute Error in flank wear (μm)
+PHM 2010,XGBoost,MAE,6.04,cutter-held-out (c4),Mean Absolute Error in flank wear (μm)
+PHM 2010,Random Forest,MAE,7.15,cutter-held-out (c4),Mean Absolute Error in flank wear (μm)
+PHM 2010,TCN,R²,0.956,cutter-held-out (c4),Coefficient of determination
+PHM 2010,1D-CNN + BiLSTM,R²,0.948,cutter-held-out (c4),Coefficient of determination
+PHM 2010,XGBoost,R²,0.921,cutter-held-out (c4),Coefficient of determination
+PHM 2010,Random Forest,R²,0.892,cutter-held-out (c4),Coefficient of determination

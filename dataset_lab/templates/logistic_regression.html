@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Logistic Regression · Binary &amp; Multiclass{% endblock %}
+
+{% block content %}
+<div class="crumb">
+  <a href="{{ url_for('main.home') }}">EXPERIMENTS</a> / <span>EXP 07: LOGISTIC REGRESSION</span>
+</div>
+
+<header class="page-head">
+  <div>
+    <h1>Logistic Regression</h1>
+    <p>Binary (Sigmoid) and Multiclass (Softmax) classification with Batch Gradient Descent.</p>
+  </div>
+  <div class="head-stamp">
+    BINARY ACC: {{ '%.1f'|format(bin_res.accuracy * 100) }}%<br>
+    SOFTMAX ACC: {{ '%.1f'|format(multi_res.accuracy * 100) }}%
+  </div>
+</header>
+
+<!-- Minimal Metrics -->
+<div class="audit-ribbon">
+  <div class="audit-stat">
+    <span class="audit-label">BINARY ACCURACY</span>
+    <div class="audit-val">{{ '%.1f'|format(bin_res.accuracy * 100) }}%</div>
+    <div class="audit-sub">Gentoo vs Adelie (N={{ bin_res.sample_count }})</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">BINARY LOSS J(w,b)</span>
+    <div class="audit-val">{{ '%.3f'|format(bin_res.initial_cost) }} → {{ '%.3f'|format(bin_res.final_cost) }}</div>
+    <div class="audit-sub">Log loss</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">SOFTMAX ACCURACY</span>
+    <div class="audit-val">{{ '%.1f'|format(multi_res.accuracy * 100) }}%</div>
+    <div class="audit-sub">3 Species (N=333)</div>
+  </div>
+  <div class="audit-stat">
+    <span class="audit-label">SOFTMAX LOSS J(W,b)</span>
+    <div class="audit-val">{{ '%.3f'|format(multi_res.initial_cost) }} → {{ '%.3f'|format(multi_res.final_cost) }}</div>
+    <div class="audit-sub">Cross-entropy</div>
+  </div>
+</div>
+
+<!-- Relevant Graphs: 2-Panel Plot -->
+<section class="results-card">
+  <div class="dataset-heading">
+    <h2>Gradient Descent Cost Curves &amp; Decision Boundary</h2>
+    <span class="status">PALMER PENGUINS</span>
+  </div>
+  <div style="background:#fff;border:1px solid #000;padding:6px;margin:16px 0;">
+    <img src="{{ chart_url }}" alt="Gradient Descent Curves and Decision Boundaries" style="width:100%;display:block;">
+  </div>
+</section>
+
+<!-- Interactive Predictor -->
+<section class="bayes-interactive-card">
+  <div class="dataset-heading">
+    <h2>Specimen Classification Predictor</h2>
+    <span class="status">LIVE INFERENCE</span>
+  </div>
+
+  <div class="two-col" style="gap:24px;margin-top:16px;">
+    <!-- Controls -->
+    <div>
+      <div class="control-box">
+        <label for="sliderBill">BILL LENGTH (mm)</label>
+        <div class="slider-val" id="valBill">{{ '%.1f'|format(init_prediction.bill_length_mm) }} mm</div>
+        <input type="range" id="sliderBill" min="32.0" max="59.0" step="0.5"
+               value="{{ init_prediction.bill_length_mm }}" oninput="updateClassificationPrediction()">
+      </div>
+
+      <div class="control-box" style="margin-top:14px;">
+        <label for="sliderFlipper">FLIPPER LENGTH (mm)</label>
+        <div class="slider-val" id="valFlipper">{{ '%.1f'|format(init_prediction.flipper_length_mm) }} mm</div>
+        <input type="range" id="sliderFlipper" min="170.0" max="235.0" step="1.0"
+               value="{{ init_prediction.flipper_length_mm }}" oninput="updateClassificationPrediction()">
+      </div>
+
+      <div style="margin-top:14px;">
+        <span class="control-label">LEARNING RATE (α):</span>
+        <div class="segmented-group" id="alphaToggle">
+          <button type="button" class="segmented-btn" onclick="setAlpha(0.05)">0.05</button>
+          <button type="button" class="segmented-btn active" onclick="setAlpha(0.1)">0.10</button>
+          <button type="button" class="segmented-btn" onclick="setAlpha(0.2)">0.20</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <span class="control-label">EPOCHS:</span>
+        <div class="segmented-group" id="iterToggle">
+          <button type="button" class="segmented-btn" onclick="setIter(200)">200</button>
+          <button type="button" class="segmented-btn active" onclick="setIter(500)">500</button>
+          <button type="button" class="segmented-btn" onclick="setIter(1000)">1000</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div>
+      <!-- Binary -->
+      <div style="border:1px solid #000;padding:14px;background:#fff;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <span class="audit-label">1. BINARY SIGMOID</span>
+          <span id="binaryVerdictBadge" style="border:1px solid #000;padding:2px 6px;font-weight:700;font-size:11px;">
+            {{ init_prediction.binary.prediction|upper }}
+          </span>
+        </div>
+        <div style="font-size:22px;font-weight:700;margin:6px 0;" id="binaryConfidenceText">
+          {{ '%.1f'|format(init_prediction.binary.confidence * 100) }}%
+        </div>
+        <div class="risk-meter-row">
+          <span>P(Gentoo)</span>
+          <b id="meterTextGentoo">{{ '%.1f'|format(init_prediction.binary.p_gentoo * 100) }}%</b>
+        </div>
+        <div class="meter-track" style="margin-bottom:6px;">
+          <div class="meter-fill" id="meterFillGentoo" style="width:{{ '%.1f'|format(init_prediction.binary.p_gentoo * 100) }}%;"></div>
+        </div>
+        <div class="risk-meter-row">
+          <span>P(Adelie)</span>
+          <b id="meterTextAdelie">{{ '%.1f'|format(init_prediction.binary.p_adelie * 100) }}%</b>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill" id="meterFillAdelie" style="width:{{ '%.1f'|format(init_prediction.binary.p_adelie * 100) }}%;"></div>
+        </div>
+      </div>
+
+      <!-- Multiclass -->
+      <div style="border:1px solid #000;padding:14px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <span class="audit-label">2. MULTICLASS SOFTMAX</span>
+          <span id="multiVerdictBadge" style="border:1px solid #000;padding:2px 6px;font-weight:700;font-size:11px;">
+            {{ init_prediction.multiclass.winner|upper }}
+          </span>
+        </div>
+        <div style="font-size:22px;font-weight:700;margin:6px 0;" id="multiWinnerConfidence">
+          {{ '%.1f'|format(init_prediction.multiclass.confidence * 100) }}%
+        </div>
+        <div class="risk-meter-row">
+          <span>Adelie</span>
+          <b id="multiTextAdelie">{{ '%.1f'|format(init_prediction.multiclass.probabilities['Adelie'] * 100) }}%</b>
+        </div>
+        <div class="meter-track" style="margin-bottom:6px;">
+          <div class="meter-fill" id="multiBarAdelie" style="width:{{ '%.1f'|format(init_prediction.multiclass.probabilities['Adelie'] * 100) }}%;"></div>
+        </div>
+        <div class="risk-meter-row">
+          <span>Chinstrap</span>
+          <b id="multiTextChinstrap">{{ '%.1f'|format(init_prediction.multiclass.probabilities['Chinstrap'] * 100) }}%</b>
+        </div>
+        <div class="meter-track" style="margin-bottom:6px;">
+          <div class="meter-fill" id="multiBarChinstrap" style="width:{{ '%.1f'|format(init_prediction.multiclass.probabilities['Chinstrap'] * 100) }}%;"></div>
+        </div>
+        <div class="risk-meter-row">
+          <span>Gentoo</span>
+          <b id="multiTextGentoo">{{ '%.1f'|format(init_prediction.multiclass.probabilities['Gentoo'] * 100) }}%</b>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill" id="multiBarGentoo" style="width:{{ '%.1f'|format(init_prediction.multiclass.probabilities['Gentoo'] * 100) }}%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Test Ledger -->
+<section class="results-card">
+  <div class="dataset-heading">
+    <h2>Sample Classification Ledger</h2>
+    <span class="status">BENCHMARK</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>SPECIMEN</th>
+          <th>TRUE SPECIES</th>
+          <th>MEASUREMENTS</th>
+          <th style="text-align:center;">BINARY PREDICTION</th>
+          <th style="text-align:center;">SOFTMAX PREDICTION</th>
+          <th style="text-align:center;">CONFIDENCE</th>
+          <th style="text-align:center;">STATUS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in test_ledger %}
+        <tr>
+          <td style="font-weight:700;">{{ s.id }}</td>
+          <td>{{ s.species }}</td>
+          <td>{{ '%.1f'|format(s.bill_length) }} mm / {{ '%.0f'|format(s.flipper_length) }} mm</td>
+          <td style="text-align:center;">{{ s.bin_pred }}</td>
+          <td style="text-align:center;font-weight:700;">{{ s.multi_pred }}</td>
+          <td style="text-align:center;">{{ '%.1f'|format(s.multi_conf * 100) }}%</td>
+          <td style="text-align:center;">
+            {% if s.multi_correct %}
+              <span class="tag-correct">MATCH</span>
+            {% else %}
+              <span class="tag-wrong">MISMATCH</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Navigation -->
+<div style="display:flex;justify-content:space-between;padding:20px 0;border-top:1px solid #000;margin-top:32px;">
+  <a href="{{ url_for('main.experiment', slug='linear-regression-gradient-descent') }}">← EXP 06: Linear Regression</a>
+  <a href="{{ url_for('main.experiment', slug='logistic-regularization') }}">EXP 08: Regularization →</a>
+  <a href="{{ url_for('main.home') }}">Overview</a>
+</div>
+
+<script>
+let currentAlpha = 0.1;
+let currentIter = 500;
+
+function updateClassificationPrediction() {
+  const bill = parseFloat(document.getElementById("sliderBill").value);
+  const flipper = parseFloat(document.getElementById("sliderFlipper").value);
+  document.getElementById("valBill").textContent = bill.toFixed(1) + " mm";
+  document.getElementById("valFlipper").textContent = flipper.toFixed(1) + " mm";
+  reoptimizeLogistic();
+}
+
+function setAlpha(val) {
+  currentAlpha = val;
+  document.querySelectorAll("#alphaToggle .segmented-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.includes(val.toString()));
+  });
+  reoptimizeLogistic();
+}
+
+function setIter(val) {
+  currentIter = val;
+  document.querySelectorAll("#iterToggle .segmented-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.includes(val.toString()));
+  });
+  reoptimizeLogistic();
+}
+
+let debounceTimer = null;
+function reoptimizeLogistic() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    const bill = parseFloat(document.getElementById("sliderBill").value);
+    const flipper = parseFloat(document.getElementById("sliderFlipper").value);
+    try {
+      const resp = await fetch("/api/logistic/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alpha: currentAlpha, iterations: currentIter, bill_length: bill, flipper_length: flipper })
+      });
+      const data = await resp.json();
+      if (data.status === "success") {
+        const bin = data.binary;
+        const multi = data.multiclass;
+
+        document.getElementById("binaryVerdictBadge").textContent = bin.prediction.toUpperCase();
+        document.getElementById("binaryConfidenceText").textContent = (bin.confidence * 100).toFixed(1) + "%";
+        document.getElementById("meterTextGentoo").textContent = (bin.p_gentoo * 100).toFixed(1) + "%";
+        document.getElementById("meterFillGentoo").style.width = (bin.p_gentoo * 100).toFixed(1) + "%";
+        document.getElementById("meterTextAdelie").textContent = (bin.p_adelie * 100).toFixed(1) + "%";
+        document.getElementById("meterFillAdelie").style.width = (bin.p_adelie * 100).toFixed(1) + "%";
+
+        document.getElementById("multiVerdictBadge").textContent = multi.winner.toUpperCase();
+        document.getElementById("multiWinnerConfidence").textContent = (multi.confidence * 100).toFixed(1) + "%";
+        const probs = multi.probabilities;
+        document.getElementById("multiTextAdelie").textContent = (probs["Adelie"] * 100).toFixed(1) + "%";
+        document.getElementById("multiBarAdelie").style.width = (probs["Adelie"] * 100).toFixed(1) + "%";
+        document.getElementById("multiTextChinstrap").textContent = (probs["Chinstrap"] * 100).toFixed(1) + "%";
+        document.getElementById("multiBarChinstrap").style.width = (probs["Chinstrap"] * 100).toFixed(1) + "%";
+        document.getElementById("multiTextGentoo").textContent = (probs["Gentoo"] * 100).toFixed(1) + "%";
+        document.getElementById("multiBarGentoo").style.width = (probs["Gentoo"] * 100).toFixed(1) + "%";
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, 100);
+}
+</script>
+{% endblock %}

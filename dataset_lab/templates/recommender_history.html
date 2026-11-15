@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Ratings & History · Music Recommenders{% endblock %}
+{% block content %}
+<section class="history-head">
+  <a class="crumb" href="{{ url_for('main.experiment', slug='recommender-systems') }}">← RECOMMENDER SYSTEMS</a>
+  <h1>Ratings & Listening History</h1>
+  <nav><a href="{{ url_for('main.recommender_library', user_id=user_id) }}">Song library</a><a href="{{ url_for('main.experiment', slug='recommender-systems') }}">All recommenders</a></nav>
+</section>
+<form class="history-profile" method="get"><label>Listener profile<input name="user_id" value="{{ user_id }}" maxlength="48"></label><button type="submit">View profile</button></form>
+<section class="history-stats"><div><strong>{{ counts.listens }}</strong><span>LISTEN EVENTS</span></div><div><strong>{{ counts.ratings }}</strong><span>SONG RATINGS</span></div><div><strong>{{ user_id }}</strong><span>PROFILE</span></div></section>
+<section class="history-block"><h2>Recent listening history</h2>
+  <div class="history-table-wrap"><table><thead><tr><th>Listened at</th><th>Track</th><th>Artist</th><th>Tags</th></tr></thead><tbody>
+    {% for entry in history %}<tr><td>{{ entry.listened_at }}</td><td>{% if entry.track %}{{ entry.track.title }}{% else %}{{ entry.track_id }}{% endif %}</td><td>{% if entry.track %}{{ entry.track.artist }}{% endif %}</td><td>{% if entry.track %}{{ entry.track.tags[:3]|map('replace','genre---','')|join(', ') }}{% endif %}</td></tr>
+    {% else %}<tr><td colspan="4">No listens logged for this profile yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<section class="history-block"><h2>Ratings</h2>
+  <div class="history-table-wrap"><table><thead><tr><th>Track</th><th>Artist</th><th>Rating</th><th></th></tr></thead><tbody>
+    {% for entry in ratings %}<tr><td>{% if entry.track %}{{ entry.track.title }}{% else %}{{ entry.track_id }}{% endif %}</td><td>{% if entry.track %}{{ entry.track.artist }}{% endif %}</td><td>{{ '%.1f'|format(entry.rating) }} / 5</td><td><a href="{{ url_for('main.recommender_library', user_id=user_id, q=entry.track.title if entry.track else '') }}">Update</a></td></tr>
+    {% else %}<tr><td colspan="4">No ratings saved for this profile yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<style>
+.history-head,.history-profile,.history-stats,.history-block{max-width:1180px;margin-left:auto;margin-right:auto;padding-left:28px;padding-right:28px}.history-head{padding-top:28px;padding-bottom:14px}.history-head h1{margin:10px 0}.history-head nav{display:flex;gap:16px;font-size:11px;font-weight:700}.history-profile{display:flex;align-items:end;gap:9px}.history-profile label{display:grid;gap:4px;font-size:11px;font-weight:700}.history-profile input{font:inherit;padding:8px;border:1px solid #888}.history-profile button{font:inherit;padding:9px 12px;background:#111;color:#fff;border:1px solid #111}.history-stats{display:flex;gap:10px;padding-top:20px;padding-bottom:20px}.history-stats div{border:1px solid #999;padding:12px 16px;min-width:120px;display:grid}.history-stats strong{font-size:20px;overflow-wrap:anywhere}.history-stats span{font-size:10px;letter-spacing:.08em}.history-block{padding-bottom:24px}.history-block h2{font-size:18px}.history-table-wrap{overflow-x:auto}.history-block table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}.history-block th,.history-block td{text-align:left;padding:9px 10px;border-bottom:1px solid #ccc;white-space:nowrap}.history-block th{background:#f1f1f1}.history-block tr:hover{background:#fafafa}@media(max-width:600px){.history-head,.history-profile,.history-stats,.history-block{padding-left:17px;padding-right:17px}.history-stats{flex-wrap:wrap}}
+</style>
+{% endblock %}

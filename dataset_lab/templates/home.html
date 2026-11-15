@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Experiment Lab{% endblock %}
+{% block content %}
+<section class="section-head" style="margin-top:28px;">
+  <div>
+    <h2>Experiments</h2>
+  </div>
+  <span class="count">{{ experiments|length }} TOTAL</span>
+</section>
+
+<div class="experiment-grid">
+  {% for slug, e in experiments.items() %}
+  <a class="experiment-card" href="{{ url_for('main.experiment', slug=slug) }}">
+    <div class="card-top">
+      <span class="number">EXP {{ '%02d'|format(loop.index) }}</span>
+      <span class="arrow">→</span>
+    </div>
+    <h3>{{ e.title }}</h3>
+    <p>{{ e.subtitle }}</p>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
