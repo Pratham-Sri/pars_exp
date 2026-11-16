@@ -14,6 +14,7 @@ CATALOG_LIMIT = 180
 METHODS = [
     {"slug": "content-based", "title": "Content Based", "detail": "Similar tracks from Jamendo genre, mood, and instrument tags."},
     {"slug": "collaborative", "title": "Collaborative Filtering", "detail": "Latent-factor predictions learned from listener ratings."},
+    {"slug": "matrix-factorization-sgd", "title": "Matrix Factorization · SGD", "detail": "Predict an unknown rating with latent user and song factors trained by SGD."},
     {"slug": "cold-start", "title": "Cold Start", "detail": "Recommendations from a new listener’s selected preferences."},
     {"slug": "user-neighbor", "title": "User Based Nearest Neighbor", "detail": "Nearest listeners and weighted rating predictions."},
     {"slug": "item-neighbor", "title": "Item Based Nearest Neighbor", "detail": "Item cosine similarity and predicted ratings."},
@@ -310,6 +311,61 @@ def _latent_factor_predictions(user_id, ratings):
     return {item: float(np.clip(prediction[row, index], 1, 5)) for index, item in enumerate(items) if not observed[row, index]}
 
 
+def _matrix_factorization_sgd(ratings, user_id, target_id, epochs=10, factors=8, learning_rate=0.01, regularization=0.02):
+    """Fit explicit-feedback user/item factors with SGD and estimate one unrated pair."""
+    if len(ratings) < 4:
+        return None, "Add at least four listener ratings before training matrix factorization."
+    users, items, user_pos, item_pos, matrix = _matrix(ratings)
+    if user_id not in user_pos:
+        return None, "This profile has no ratings yet. Rate songs under this profile, then retry."
+    if target_id not in item_pos:
+        return None, "The selected song needs ratings from other profiles before its unknown rating can be estimated."
+    u, i = user_pos[user_id], item_pos[target_id]
+    if np.isfinite(matrix[u, i]):
+        return None, "That song already has a rating for this profile. Select an unrated song."
+    if len(users) < 2 or int(np.isfinite(matrix).sum()) < 4:
+        return None, "Rate songs under at least two profiles; include the target song under another profile."
+
+    mean = float(np.nanmean(matrix))
+    rng = np.random.default_rng(42)
+    user_factors = rng.normal(0, 0.08, size=(len(users), factors))
+    item_factors = rng.normal(0, 0.08, size=(len(items), factors))
+    user_bias = np.zeros(len(users), dtype=float)
+    item_bias = np.zeros(len(items), dtype=float)
+    observations = [(user_pos[listener], item_pos[track], float(value)) for listener, track, value in ratings]
+    rng.shuffle(observations)
+    loss_by_epoch = []
+    epoch_count = max(3, min(100, int(epochs)))
+
+    for _epoch in range(epoch_count):
+        rng.shuffle(observations)
+        for row, col, actual in observations:
+            predicted = mean + user_bias[row] + item_bias[col] + float(np.dot(user_factors[row], item_factors[col]))
+            error = actual - predicted
+            old_user = user_factors[row].copy()
+            old_item = item_factors[col].copy()
+            user_bias[row] += learning_rate * (error - regularization * user_bias[row])
+            item_bias[col] += learning_rate * (error - regularization * item_bias[col])
+            user_factors[row] += learning_rate * (error * old_item - regularization * old_user)
+            item_factors[col] += learning_rate * (error * old_user - regularization * old_item)
+
+        squared_errors = []
+        for row, col, actual in observations:
+            predicted = mean + user_bias[row] + item_bias[col] + float(np.dot(user_factors[row], item_factors[col]))
+            squared_errors.append((actual - predicted) ** 2)
+        loss_by_epoch.append(float(np.sqrt(np.mean(squared_errors))))
+
+    estimate = mean + user_bias[u] + item_bias[i] + float(np.dot(user_factors[u], item_factors[i]))
+    return {
+        "rating": float(np.clip(estimate, 1, 5)),
+        "epochs": epoch_count,
+        "factors": factors,
+        "rating_count": len(observations),
+        "profile_count": len(users),
+        "epoch_rmse": loss_by_epoch,
+    }, ""
+
+
 def recommend(method, catalog, ratings, user_id="", options=None, history=None):
     """Return recommendation rows plus small method-specific metrics for a page."""
     options = options or {}
@@ -324,7 +380,29 @@ def recommend(method, catalog, ratings, user_id="", options=None, history=None):
     if not catalog:
         result["message"] = "Jamendo catalog files are missing from /datasets."
         return result
-    if method == "content-based":
+    if method == "matrix-factorization-sgd":
+        target = options.get("target_track") or seed
+        fit, message = _matrix_factorization_sgd(
+            ratings,
+            user_id,
+            target,
+            epochs=options.get("epochs", 10),
+            factors=options.get("factors", 8),
+        )
+        if fit:
+            target_track = by_id.get(target)
+            result["predicted_rating"] = fit["rating"]
+            result["items"] = [{**target_track, "score": fit["rating"], "reason": "Predicted unknown rating · SGD matrix factorization"}]
+            result["metrics"] = [
+                f"Epochs: {fit['epochs']}",
+                f"Latent factors: {fit['factors']}",
+                f"Training ratings: {fit['rating_count']}",
+                f"Profiles: {fit['profile_count']}",
+            ]
+            result["epoch_losses"] = fit["epoch_rmse"]
+        else:
+            result["message"] = message
+    elif method == "content-based":
         if seed not in by_id:
             seed = catalog[0]["track_id"]
         source = by_id[seed]

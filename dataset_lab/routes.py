@@ -565,6 +565,7 @@ def recommender_method(method):
     options = {
         "seed_track": request.values.get("seed_track") or (catalog[0]["track_id"] if catalog else ""),
         "target_track": request.values.get("target_track") or (catalog[0]["track_id"] if catalog else ""),
+        "epochs": min(100, max(3, request.values.get("epochs", default=10, type=int))),
         "seen_mode": request.values.get("seen_mode", "unseen"),
         "k": min(20, max(1, request.values.get("k", default=5, type=int))),
         "preferences": request.form.getlist("preferences") if request.method == "POST" else request.args.getlist("preferences"),
@@ -572,7 +573,7 @@ def recommender_method(method):
         "mood_weight": request.values.get("mood_weight", default="1"),
         "instrument_weight": request.values.get("instrument_weight", default="1"),
     }
-    analysis = {"items": [], "metrics": [], "message": "", "neighbors": [], "predicted_rating": None}
+    analysis = {"items": [], "metrics": [], "message": "", "neighbors": [], "predicted_rating": None, "epoch_losses": []}
     if request.method == "POST" and request.form.get("action") == "recommend":
         analysis = recommend(method, catalog, load_ratings(db_path), user_id, options, history=load_history(db_path, limit=10000))
     return render_template(
