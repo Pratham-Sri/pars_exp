@@ -14,7 +14,6 @@ CATALOG_LIMIT = 180
 METHODS = [
     {"slug": "content-based", "title": "Content Based", "detail": "Similar tracks from Jamendo genre, mood, and instrument tags."},
     {"slug": "collaborative", "title": "Collaborative Filtering", "detail": "Latent-factor predictions learned from listener ratings."},
-    {"slug": "matrix-factorization-sgd", "title": "Matrix Factorization · SGD", "detail": "Predict an unknown rating with latent user and song factors trained by SGD."},
     {"slug": "cold-start", "title": "Cold Start", "detail": "Recommendations from a new listener’s selected preferences."},
     {"slug": "user-neighbor", "title": "User Based Nearest Neighbor", "detail": "Nearest listeners and weighted rating predictions."},
     {"slug": "item-neighbor", "title": "Item Based Nearest Neighbor", "detail": "Item cosine similarity and predicted ratings."},

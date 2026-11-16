@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ experiment.title }}{% endblock %}
+{% block content %}
+<section class="mf-head">
+  <a class="crumb" href="{{ url_for('main.home') }}">← EXPERIMENTS</a>
+  <h1>{{ experiment.title }}</h1>
+  <nav><a href="{{ url_for('main.experiment', slug='recommender-systems') }}">Recommender systems</a><a href="{{ url_for('main.recommender_library', user_id=user_id) }}">Song library</a><a href="{{ url_for('main.recommender_history', user_id=user_id) }}">Ratings & history</a></nav>
+</section>
+<form class="mf-controls" method="post">
+  <label>Listener profile<input name="user_id" value="{{ user_id }}" maxlength="48" required></label>
+  <label>Unrated song<select name="target_track">{% for track in catalog %}<option value="{{ track.track_id }}" {% if track.track_id == options.target_track %}selected{% endif %}>{{ track.title }} — {{ track.artist }}</option>{% endfor %}</select></label>
+  <label>Epochs (minimum 3)<input type="number" name="epochs" min="3" max="100" value="{{ options.epochs }}" required></label>
+  <button type="submit">Predict unknown rating</button>
+</form>
+{% if analysis['metrics'] or analysis['message'] or analysis['items'] %}
+<section class="mf-output">
+  {% if analysis['metrics'] %}<div class="mf-metrics">{% for metric in analysis['metrics'] %}<span>{{ metric }}</span>{% endfor %}</div>{% endif %}
+  {% if analysis['message'] %}<p class="mf-message">{{ analysis['message'] }}</p>{% endif %}
+  {% if analysis['items'] %}{% for item in analysis['items'] %}<div class="mf-prediction"><span>Predicted rating</span><strong>{{ '%.2f'|format(item.score) }} / 5</strong><h2>{{ item.title }}</h2><p>{{ item.artist }}{% if item.album %} · {{ item.album }}{% endif %}</p></div>{% endfor %}{% endif %}
+  {% if analysis['epoch_losses'] %}<div class="mf-loss"><h2>Training RMSE by epoch</h2><table><thead><tr><th>Epoch</th><th>RMSE</th></tr></thead><tbody>{% for loss in analysis['epoch_losses'] %}<tr><td>{{ loop.index }}</td><td>{{ '%.4f'|format(loss) }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+</section>
+{% endif %}
+<style>
+.mf-head,.mf-controls,.mf-output{max-width:1120px;margin:0 auto;padding-left:28px;padding-right:28px}.mf-head{padding-top:30px;padding-bottom:20px}.mf-head h1{margin:12px 0}.mf-head nav{display:flex;gap:17px;font-size:11px;font-weight:700}.mf-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap;padding-bottom:24px}.mf-controls label{display:grid;gap:5px;font-size:11px;font-weight:700}.mf-controls input,.mf-controls select{font:inherit;padding:9px;border:1px solid #888;background:#fff;min-width:180px}.mf-controls button{font:inherit;padding:10px 14px;background:#111;color:#fff;border:1px solid #111;cursor:pointer}.mf-controls button:hover{background:#fff;color:#111}.mf-output{padding-bottom:55px}.mf-metrics{display:flex;gap:8px;flex-wrap:wrap}.mf-metrics span{padding:5px 8px;border:1px solid #aaa;font-size:11px}.mf-message{padding:12px;background:#f3f3f3;border-left:3px solid #111}.mf-prediction{margin:16px 0;padding:18px;border:1px solid #999;max-width:650px}.mf-prediction span{font-size:11px;text-transform:uppercase;letter-spacing:.06em}.mf-prediction strong{float:right;font-size:24px}.mf-prediction h2{margin:14px 0 3px}.mf-prediction p{margin:0;color:#555}.mf-loss{max-width:500px}.mf-loss h2{font-size:18px}.mf-loss table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}.mf-loss th,.mf-loss td{text-align:left;padding:7px 10px;border-bottom:1px solid #ccc}.mf-loss th{background:#f1f1f1}@media(max-width:600px){.mf-head,.mf-controls,.mf-output{padding-left:17px;padding-right:17px}.mf-controls{align-items:stretch}.mf-controls label,.mf-controls input,.mf-controls select{width:100%}}
+</style>
+{% endblock %}

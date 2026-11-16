@@ -120,6 +120,28 @@ def experiment(slug):
             interaction_archive_present=any((project_root / "datasets" / name).exists() for name in ("lastfm-dataset-1K.tar.gz", "lastfm-dataset-360K.tar.gz", "usersha1-artmbid-artname-plays.tsv", "userid-timestamp-artid-artname-traid-traname.tsv")),
             interaction_source_url="https://zenodo.org/records/6090214",
         )
+    if slug == "matrix-factorization-sgd":
+        from .recommenders import load_catalog, load_ratings, recommend
+
+        project_root = Path(current_app.root_path).parent
+        catalog = load_catalog(project_root)
+        db_path = Path(current_app.config["DATA_ROOT"]) / "recommender" / "interactions.sqlite3"
+        user_id = (request.values.get("user_id") or "listener_1").strip()[:48]
+        options = {
+            "target_track": request.values.get("target_track") or (catalog[0]["track_id"] if catalog else ""),
+            "epochs": min(100, max(3, request.values.get("epochs", default=10, type=int))),
+        }
+        analysis = {"items": [], "metrics": [], "message": "", "epoch_losses": []}
+        if request.method == "POST":
+            analysis = recommend("matrix-factorization-sgd", catalog, load_ratings(db_path), user_id, options)
+        return render_template(
+            "matrix_factorization.html",
+            experiment=exp_data,
+            catalog=catalog,
+            user_id=user_id,
+            options=options,
+            analysis=analysis,
+        )
     if slug == "multimodal-feature-extraction":
         from .multimodal import generate_segment_max_feature_charts
         static_dir = Path(current_app.root_path) / "static"

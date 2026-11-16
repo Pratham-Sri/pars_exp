@@ -17,10 +17,9 @@
   {% if method.slug in ['content-based','hybrid','item-knn'] %}
   <label>Seed track<select name="seed_track">{% for track in catalog %}<option value="{{ track.track_id }}" {% if track.track_id == options.seed_track %}selected{% endif %}>{{ track.title }} — {{ track.artist }}</option>{% endfor %}</select></label>
   {% endif %}
-  {% if method.slug in ['item-neighbor','adjusted-cosine','matrix-factorization-sgd'] %}
+  {% if method.slug in ['item-neighbor','adjusted-cosine'] %}
   <label>Track to predict<select name="target_track">{% for track in catalog %}<option value="{{ track.track_id }}" {% if track.track_id == options.target_track %}selected{% endif %}>{{ track.title }} — {{ track.artist }}</option>{% endfor %}</select></label>
   {% endif %}
-  {% if method.slug == 'matrix-factorization-sgd' %}<label>Epochs (minimum 3)<input type="number" name="epochs" min="3" max="100" value="{{ options.epochs }}"></label>{% endif %}
   {% if method.slug == 'item-knn' %}
   <label>Items<select name="seen_mode"><option value="unseen" {% if options.seen_mode == 'unseen' %}selected{% endif %}>Unseen</option><option value="seen" {% if options.seen_mode == 'seen' %}selected{% endif %}>Seen</option></select></label>
   <label>Neighbors k<input type="number" name="k" min="1" max="20" value="{{ options.k }}"></label>
@@ -48,7 +47,7 @@
   {% if analysis['neighbors'] %}<div class="neighbor-list">Nearest profiles: {% for neighbor in analysis['neighbors'] %}<span>{{ neighbor.user_id }} · {{ '%.3f'|format(neighbor.similarity) }}</span>{% endfor %}</div>{% endif %}
   {% if analysis['items'] %}<div class="rec-results">
     {% for track in analysis['items'] %}
-    <article class="result-card"><span class="result-score">{{ '%.2f'|format(track.score) }}{% if method.slug in ['item-neighbor','adjusted-cosine','collaborative','user-neighbor','matrix-factorization-sgd'] %} / 5{% endif %}</span><h3>{{ track.title }}</h3><p>{{ track.artist }}{% if track.album %} · {{ track.album }}{% endif %}</p><small>{{ track.reason }}</small><a class="listen-link" href="{{ url_for('main.recommender_listen', track_id=track.track_id, user_id=user_id) }}" target="_blank" rel="noopener">OPEN / LISTEN ↗</a></article>
+    <article class="result-card"><span class="result-score">{{ '%.2f'|format(track.score) }}{% if method.slug in ['item-neighbor','adjusted-cosine','collaborative','user-neighbor'] %} / 5{% endif %}</span><h3>{{ track.title }}</h3><p>{{ track.artist }}{% if track.album %} · {{ track.album }}{% endif %}</p><small>{{ track.reason }}</small><a class="listen-link" href="{{ url_for('main.recommender_listen', track_id=track.track_id, user_id=user_id) }}" target="_blank" rel="noopener">OPEN / LISTEN ↗</a></article>
     {% endfor %}
   </div>{% endif %}
 </section>

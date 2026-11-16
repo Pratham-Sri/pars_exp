@@ -61,6 +61,12 @@ EXPERIMENTS = {
         "objective": "Fit LDA on training rows, project held-out records into the reduced discriminant space, and evaluate species predictions on the test split.",
         "datasets": [],
     },
+    "matrix-factorization-sgd": {
+        "title": "Matrix Factorization Using SGD",
+        "subtitle": "Unknown Song Rating Prediction · Minimum 3 Epochs",
+        "objective": "Predict an unrated song for a listener profile by fitting latent user and song factors with stochastic gradient descent.",
+        "datasets": [],
+    },
     "recommender-systems": {
         "title": "Music Recommender Systems",
         "subtitle": "MTG-Jamendo · 9 Recommendation Methods · Listener Ratings",
